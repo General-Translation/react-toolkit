@@ -1,8 +1,10 @@
 'use client'
 
+import React from 'react';
+
 import { getLanguageName, getUserLanguage } from 'generaltranslation';
 import { createContext, useEffect, useState, useContext } from 'react'
-import I18NChildren from './I18NChildren';
+import I18NComponent from './I18NComponent';
 
 const I18NContext = createContext();
 export const useI18NContext = () => useContext(I18NContext);
@@ -12,6 +14,8 @@ export default function I18NProvider({
     projectID = '',
     defaultLanguage = 'en',
     userLanguage = '',
+    i18nTags = ['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'],
+    streaming = false,
     ...languageJSONs
 }) {
 
@@ -46,35 +50,34 @@ export default function I18NProvider({
         // Parse children for strings to translate
         // Gets I18N data for children of I18NChildren
         // If there is none, creates via server and returns it
+        // Text should stream where possible?
+        // Returns a component
+        // Rules for deciding what to translate:
+        // 1. Translate all <h> and <p> tags except those marked with i18n false
+        // 2. Translate all additional tags marked with i18n true
+        // 3. Return all other components unchanged
         
-        /*
-        if (content in I18NData) {
-            return I18NData[content];
-        }
-        else {
-            try {
-                const response = await fetch('/api/generaltranslation/internationalize', {
-                    method: 'POST',
-                    headers: {
-                      'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ 
-                        projectID: projectID,
-                        defaultLanguage: defaultLanguage,
-                        userLanguage: userLanguage,
-                        content: content,
-                        metadata: metadata
+        // Return component
+
+        return (
+            <>
+                {
+                    React.Children.map(children, child => {
+                        if (React.isValidElement(child)) {
+                            // Implementing the rules based on element type and props
+                            const { type, props } = child;
+                            if ((i18nTags.includes(type) && props.i18n !== false) || props.i18n === true) {
+                                // Return translated data if it can be got from I18NData, using a I18NComponent
+                                // Else generate it, using an NewI18NComponent
+                            }
+                            // Return all other components unchanged
+                            else return child;
+                        }
+                        return child;
                     })
-                });
-                const data = await response.json();
-                setI18NData(prev => { return {...prev, ...data } });
-                return data[content];
-            } catch (error) {
-                console.error(error);
-                return content;
-            }
-        }
-        */
+                }
+            </>
+        )
     }
 
     return (

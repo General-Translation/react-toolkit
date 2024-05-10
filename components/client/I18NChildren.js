@@ -8,6 +8,7 @@ const I18NChildren = ({ children }) => {
   const { getI18N } = useI18NContext();
 
   const [I18N, setI18N] = useState(null)
+  
   useEffect(() => {
     getI18N(children).then(result => setI18N(result));
   }, [children]);
