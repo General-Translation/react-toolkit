@@ -3,21 +3,21 @@
 import { useEffect, useState } from "react";
 import { useI18NContext } from "./I18NProvider";
 
-const I18NChildren = ({ children }) => {
+const I18N = ({ children }) => {
 
   const { getI18N } = useI18NContext();
 
-  const [I18N, setI18N] = useState(null)
+  const [I18NChildren, setI18NChildren] = useState(null)
   
   useEffect(() => {
-    getI18N(children).then(result => setI18N(result));
+    getI18N(children).then(result => setI18NChildren(result));
   }, [children]);
 
   return (
     <>
-      {I18N ? I18N : <></>}
+      {I18NChildren ? I18NChildren : <></>}
     </>
   )
 }
 
-export default I18NChildren;
+export default I18N;

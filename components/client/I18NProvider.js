@@ -1,10 +1,27 @@
 'use client'
 
 import React from 'react';
-
 import { getLanguageName, getUserLanguage } from 'generaltranslation';
 import { createContext, useEffect, useState, useContext } from 'react'
-import I18NComponent from './I18NComponent';
+
+function createChildrenString(children) {
+    return React.Children.map(children, child => {
+      if (React.isValidElement(child)) {
+        const { type, props } = child;
+        let currentChildren = '';
+        Object.entries(props)
+          .map(([key, value]) => {
+            if (key === 'children') {
+                currentChildren += createChildrenString(value);
+                return ''
+            }
+          })
+          .join('');
+        return `<${type.displayName || type.name || type}>${currentChildren}</${type.displayName || type.name || type}>`;
+      }
+      return child.toString();
+    }).join('');
+}
 
 const I18NContext = createContext();
 export const useI18NContext = () => useContext(I18NContext);
@@ -15,7 +32,6 @@ export default function I18NProvider({
     defaultLanguage = 'en',
     userLanguage = '',
     i18nTags = ['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'],
-    streaming = false,
     ...languageJSONs
 }) {
 
@@ -26,8 +42,9 @@ export default function I18NProvider({
     useEffect(() => {
         const fetchI18NData = async () => {
             if (userLanguage in languageJSONs) {
-                setI18NData(languageJSONs[userLanguage])
-            } else {
+                setI18NData(languageJSONs[userLanguage]);
+            }
+            else {
                 try {
                     const response = await fetch(`https://json.gtx.dev/${projectID}/${userLanguage}.json`);
                     const data = await response.json();
@@ -45,19 +62,20 @@ export default function I18NProvider({
 
     // Gets internationalized content
     // Tries first for local data, then for remote
-    const getI18N = async ({ children }) => {
-        
-        // Parse children for strings to translate
-        // Gets I18N data for children of I18NChildren
-        // If there is none, creates via server and returns it
-        // Text should stream where possible?
-        // Returns a component
+    const getI18N = async (children) => {
+
+        const childrenAsString = createChildrenString(children);
+        console.log(childrenAsString)
         // Rules for deciding what to translate:
         // 1. Translate all <h> and <p> tags except those marked with i18n false
         // 2. Translate all additional tags marked with i18n true
         // 3. Return all other components unchanged
-        
-        // Return component
+
+        // I18N component:
+        // Parse children for strings to translate
+        // Gets I18N data for children of I18NChildren
+        // If there is none, creates via server and returns it
+        // Text should stream where possible?
 
         return (
             <>
@@ -66,14 +84,16 @@ export default function I18NProvider({
                         if (React.isValidElement(child)) {
                             // Implementing the rules based on element type and props
                             const { type, props } = child;
-                            if ((i18nTags.includes(type) && props.i18n !== false) || props.i18n === true) {
-                                // Return translated data if it can be got from I18NData, using a I18NComponent
-                                // Else generate it, using an NewI18NComponent
+                            if ((i18nTags.includes(type) && props?.i18n !== false) || props?.i18n === true) {
+                                return child;
+                                // Return translated data if it can be got from I18NData, using a I18N
+                                // Else generate it, using an NewI18N
                             }
                             // Return all other components unchanged
                             else return child;
+                        } else {
+                            return child;
                         }
-                        return child;
                     })
                 }
             </>
@@ -91,7 +111,7 @@ export default function I18NProvider({
         >
             {
                 (!translationRequired || I18NData) &&
-                {children}
+                children
             }
         </I18NContext.Provider>
     )
