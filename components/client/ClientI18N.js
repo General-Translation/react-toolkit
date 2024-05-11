@@ -5,17 +5,25 @@ import { useI18NContext } from "./I18NProvider";
 
 const I18N = ({ children }) => {
 
-  const { getI18N } = useI18NContext();
+  const { translationRequired, getI18N } = useI18NContext();
 
   const [I18NChildren, setI18NChildren] = useState(null)
   
   useEffect(() => {
-    getI18N(children).then(result => setI18NChildren(result));
-  }, [children]);
+    if (translationRequired) {
+      setI18NChildren(getI18N(children));
+    } 
+  }, [translationRequired, children]);
 
   return (
     <>
-      {I18NChildren ? I18NChildren : <></>}
+      {
+        translationRequired 
+        ?
+        I18NChildren ? I18NChildren : <></>
+        :
+        children
+      }
     </>
   )
 }

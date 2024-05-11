@@ -3,23 +3,26 @@
 import React from 'react';
 import { getLanguageName, getUserLanguage } from 'generaltranslation';
 import { createContext, useEffect, useState, useContext } from 'react'
+import _I18NComponent from './_I18NComponent';
 
 function createChildrenString(children) {
     return React.Children.map(children, child => {
       if (React.isValidElement(child)) {
         const { type, props } = child;
         let currentChildren = '';
-        Object.entries(props)
-          .map(([key, value]) => {
-            if (key === 'children') {
-                currentChildren += createChildrenString(value);
-                return ''
-            }
-          })
-          .join('');
+        if (props.i18n !== "false") {
+            Object.entries(props)
+            .map(([key, value]) => {
+                if (key === 'children') {
+                    currentChildren += createChildrenString(value);
+                    return ''
+                }
+            })
+            .join('');
+        }
         return `<${type.displayName || type.name || type}>${currentChildren}</${type.displayName || type.name || type}>`;
       }
-      return child.toString();
+      return child?.toString() || '';
     }).join('');
 }
 
@@ -36,7 +39,7 @@ export default function I18NProvider({
 }) {
 
     userLanguage = userLanguage ? userLanguage : getUserLanguage({ defaultLanguage });
-    const translationRequired = (getLanguageName(userLanguage) !== getLanguageName(defaultLanguage));
+    const translationRequired = projectID && (getLanguageName(userLanguage) !== getLanguageName(defaultLanguage)) ? true : false;
 
     const [I18NData, setI18NData] = useState(null);
     useEffect(() => {
@@ -58,38 +61,32 @@ export default function I18NProvider({
         if (translationRequired) {
             fetchI18NData()
         }
-    }, [projectID, translationRequired, userLanguage, languageJSONs])
+    }, [projectID, translationRequired, userLanguage])
 
-    // Gets internationalized content
-    // Tries first for local data, then for remote
-    const getI18N = async (children) => {
-
-        const childrenAsString = createChildrenString(children);
-        console.log(childrenAsString)
-        // Rules for deciding what to translate:
-        // 1. Translate all <h> and <p> tags except those marked with i18n false
-        // 2. Translate all additional tags marked with i18n true
-        // 3. Return all other components unchanged
-
-        // I18N component:
-        // Parse children for strings to translate
-        // Gets I18N data for children of I18NChildren
-        // If there is none, creates via server and returns it
-        // Text should stream where possible?
-
+    const getI18N = (children) => {
         return (
             <>
                 {
                     React.Children.map(children, child => {
-                        if (React.isValidElement(child)) {
+                        if (React.isValidElement(child)) {   
                             // Implementing the rules based on element type and props
                             const { type, props } = child;
-                            if ((i18nTags.includes(type) && props?.i18n !== false) || props?.i18n === true) {
-                                return child;
-                                // Return translated data if it can be got from I18NData, using a I18N
-                                // Else generate it, using an NewI18N
+                            if ((i18nTags.includes(type) && props?.i18n !== "false") || props?.i18n === "true") {
+                                const childrenAsString = createChildrenString(child);
+                                return (
+                                    <_I18NComponent 
+                                        projectID={projectID} 
+                                        htmlAsString={childrenAsString} 
+                                        I18NStrings={I18NData?.[childrenAsString]}
+                                        defaultLanguage={defaultLanguage}
+                                        userLanguage={userLanguage}
+                                    >
+                                        { child }
+                                    </_I18NComponent>
+                                );
                             }
-                            // Return all other components unchanged
+                            else if (props?.children) return recursiveGetI18N(props.children)
+                            // Base case, return unchanged
                             else return child;
                         } else {
                             return child;
@@ -99,6 +96,10 @@ export default function I18NProvider({
             </>
         )
     }
+
+    // Gets internationalized content
+    // Tries first for local data, then for remote
+    
 
     return (
         <I18NContext.Provider
