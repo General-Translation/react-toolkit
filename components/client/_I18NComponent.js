@@ -67,7 +67,8 @@ export default function _I18NComponent({
                     const result = await response.json();
                     translations = { ...translations, ...result };
                 } catch (error) {
-                    console.error('Error fetching translations:', error);
+                    console.error('Error creating new translations:', error);
+                    translations = { ...Object.fromEntries(strings.map(s => [s, s])), ...translations };
                 }
             }
             const translated = await Promise.all(
