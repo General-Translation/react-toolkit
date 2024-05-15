@@ -2,15 +2,18 @@
 
 import React from 'react'
 import { useEffect, useState } from "react"
+import { useI18NContext } from './I18NProvider'
 
 export default function _I18NComponent({
-    children, projectID, htmlAsString, I18NStrings, defaultLanguage, userLanguage
+    children, htmlAsString, I18NStrings
 }) {
 
     // I18N component
     // Parse children for strings to translate
     // Replaces string with I18NStrings[string]
     // If there is none, fetches a new string via API
+
+    const { projectID, userLanguage, defaultLanguage } = useI18NContext();
 
     const [I18NChildren, setI18NChildren] = useState(null)
 
