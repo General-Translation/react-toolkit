@@ -15,7 +15,7 @@ export default function I18NProvider({
     projectID = '',
     defaultLanguage = 'en',
     userLanguage = '',
-    i18nTags = ['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'],
+    i18nTags = ['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'button', 'a'],
     ...languageJSONs
 }) {
 
@@ -34,7 +34,11 @@ export default function I18NProvider({
                 try {
                     const response = await fetch(`https://json.gtx.dev/${projectID}/${userLanguage}`);
                     const data = await response.json();
-                    setI18NData(data);
+                    if (typeof data === 'object') {
+                        setI18NData(data);
+                    } else {
+                        setI18NData({})
+                    }
                 } catch (error) {
                     console.log('@generaltranslation/react: No current internationalization found. One will be created dynamically based on your project settings.');
                     setI18NData({});
@@ -47,7 +51,10 @@ export default function I18NProvider({
     }, [projectID, translationRequired, userLanguage])
 
     // Create the appropriate children
-    const getI18N = (children) => {
+    function getI18N(children) {
+        if (children?.props?.children === "Get Started") {
+            console.log(children)
+        }
         return (
             <>
                 {
@@ -66,7 +73,10 @@ export default function I18NProvider({
                                     </_I18NComponent>
                                 );
                             }
-                            else if (props?.children) return recursiveGetI18N(props.children)
+                            else if (props?.children) return React.cloneElement(child, {
+                                ...props,
+                                children: getI18N(props.children)
+                            });
                             // Base case, return unchanged
                             else return child;
                         } else {
