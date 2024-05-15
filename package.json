@@ -1,26 +1,27 @@
 {
-  "name": "gt-react",
+  "name": "@generaltranslation/react",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/General-Translation/react-toolkit.git"
-  },
-  "author": "General Translation, Inc.",
-  "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/General-Translation/react-toolkit/issues"
-  },
-  "homepage": "https://github.com/General-Translation/react-toolkit#readme",
   "peerDependencies": {
     "react": ">=16.8.0",
     "react-dom": ">=16.8.0"
   },
   "dependencies": {
     "generaltranslation": "^1.1.26"
-  }
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/general-translation/react-toolkit.git"
+  },
+  "author": "General Translation, Inc.",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/general-translation/react-toolkit/issues"
+  },
+  "homepage": "https://github.com/general-translation/react-toolkit#readme"
 }
