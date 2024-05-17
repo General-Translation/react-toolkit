@@ -1,10 +1,22 @@
 'use server'
 
-import { headers } from 'next/headers'
-import { getLanguageName } from 'generaltranslation';
 import React from 'react';
 
-export default async function NextI18N({
+import GT, { getLanguageName } from 'generaltranslation';
+const defaultDriver = new GT()
+
+function deepMerge(obj1, obj2) {
+    for (let key in obj2) {
+        if (obj2[key] instanceof Object && key in obj1) {
+            obj1[key] = deepMerge(obj1[key], obj2[key]);
+        } else {
+            obj1[key] = obj2[key];
+        }
+    }
+    return obj1;
+}
+
+export default async function ServerI18N({
     children,
     projectID = '',
     defaultLanguage = 'en',
@@ -12,13 +24,13 @@ export default async function NextI18N({
     i18nTags = ['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'],
     excludeTags = ["ExcludeI18N"],
     remoteSource = true,
+    gt = defaultDriver,
     ...languageJSONs
 }) {
-    
-    const languages = headers()?.get('accept-language');
-    const userLanguage = forceUserLanguage || languages?.split(',')?.[0]?.slice(0, 2) || defaultLanguage;
-    
+
+    const userLanguage = forceUserLanguage || defaultLanguage;
     const translationRequired = projectID && (getLanguageName(userLanguage) !== getLanguageName(defaultLanguage)) ? true : false;
+    
     if (!translationRequired) {
         return (
             <>
@@ -34,7 +46,7 @@ export default async function NextI18N({
             const response = await fetch(`https://json.gtx.dev/${projectID}/${userLanguage}`);
             I18NData = await response.json();
         } catch (error) {
-            console.log(error)
+            console.error(error)
             return (
                 <>
                     {children}
@@ -65,7 +77,7 @@ export default async function NextI18N({
                     }
                 })
                 .join('');
-                return `<${type.displayName || type?.name || type}>${currentChildren}</${type?.displayName || type?.name || type}>`;
+                return `<${type?.displayName || type?.name || type}>${currentChildren}</${type?.displayName || type?.name || type}>`;
             }
           }
           return child?.toString() || '';
@@ -92,9 +104,10 @@ export default async function NextI18N({
 
     // Go through and collate strings
     const traverseStrings = (child, html) => {
-        const strings = newStrings[html];
         const I18NStrings = I18NData[html];
         if (typeof child === 'string' && !I18NStrings?.[child]) {
+            newStrings[html] = newStrings[html] || [];
+            const strings = newStrings[html];
             strings.push(child);
         } 
         else if (React.isValidElement(child)) {
@@ -116,7 +129,6 @@ export default async function NextI18N({
             } 
             else if (includeI18N(type)) {
                 const html = createChildrenString(child);
-                newStrings[html] = newStrings[html] || [];
                 traverseStrings(child, html);
             } 
             else {
@@ -157,14 +169,19 @@ export default async function NextI18N({
     // TRANSLATE MISSING STRINGS
 
     let translations = I18NData;
-    try {
-        const response = await fetch();
-        const result = await response.json();
-        translations = { ...I18NData, ...result };
-    } catch (error) {
-        console.log(error);
-    }
-    
+
+    if (Object.keys(newStrings).length > 0) {
+        const newTranslations = await gt.translateHTML({
+            projectID,
+            userLanguage,
+            defaultLanguage,
+            content: newStrings
+        })
+        if (typeof newTranslations === 'object') {
+           translations = deepMerge(newTranslations, I18NData);
+        }
+    };
+
     // RENDER
 
     // Go through and replace strings
@@ -177,10 +194,15 @@ export default async function NextI18N({
             if (excludeI18N(type)) {
                 return child;
             } else {
-                return React.cloneElement(child, {
-                    ...props,
-                    children: React.Children.toArray(props.children).map(currentChild => renderStrings(currentChild, I18NStrings))
-                });
+                if (props.children) {
+                    return React.cloneElement(child, {
+                        ...props,
+                        children: React.Children.toArray(props.children).map(currentChild => renderStrings(currentChild, I18NStrings))
+                    });
+                }
+                else {
+                    return child;
+                }
             }
         } 
         else {
@@ -200,10 +222,15 @@ export default async function NextI18N({
                 return renderStrings(child, translations[html])
             } 
             else {
-                return React.cloneElement(child, {
-                    ...props,
-                    children: React.Children.toArray(props.children).map(currentChild => renderI18N(currentChild))
-                });
+                if (props.children) {
+                    return React.cloneElement(child, {
+                        ...props,
+                        children: React.Children.toArray(props.children).map(currentChild => renderI18N(currentChild))
+                    });
+                }
+                else {
+                    return child;
+                }
             }
         } 
         else {
@@ -222,17 +249,22 @@ export default async function NextI18N({
                 return renderI18N(child);
             }
             else {
-                return React.cloneElement(child, {
-                    ...props,
-                    children: React.Children.toArray(props.children).map(currentChild => renderChildren(currentChild))
-                });
+                if (props.children) {
+                    return React.cloneElement(child, {
+                        ...props,
+                        children: React.Children.toArray(props.children).map(currentChild => renderChildren(currentChild))
+                    });
+                }
+                else {
+                    return child;
+                }
             }
         } else {
             return child;
         }
     }
 
-    const I18NChildren = React.Children.toArray(children).map(child => renderChildren(child));
+    const I18NChildren = renderChildren(children);
 
     return (
         <>

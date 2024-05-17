@@ -1,10 +1,8 @@
 'use client'
 
-import React, { useCallback, useMemo } from 'react';
+import React, { useCallback } from 'react';
 import { getLanguageName } from 'generaltranslation';
 import { createContext, useEffect, useState, useContext } from 'react'
-
-import I18NManager from '../../js/I18NManager';
 
 import _I18NComponent from './_I18NComponent';
 
