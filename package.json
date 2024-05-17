@@ -8,9 +8,8 @@
     "react-dom": ">=16.8.0"
   },
   "dependencies": {
-    "generaltranslation": "^1.1.26"
+    "generaltranslation": "^1.2.5"
   },
-  "devDependencies": {},
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
