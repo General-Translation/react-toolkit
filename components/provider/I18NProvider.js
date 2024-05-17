@@ -18,6 +18,7 @@ export default function I18NProvider({
     forceUserLanguage = '',
     i18nTags = ['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'],
     excludeTags = ["ExcludeI18N"],
+    remoteSource = true,
     ...languageJSONs
 }) {
 
@@ -52,22 +53,22 @@ export default function I18NProvider({
     const [I18NData, setI18NData] = useState(null);
     useEffect(() => {
         const fetchI18NData = async () => {
-            if (userLanguage in languageJSONs) {
-                setI18NData(languageJSONs[userLanguage]);
-            }
-            else {
+            let data = {};
+            if (remoteSource) {
                 try {
                     const response = await fetch(`https://json.gtx.dev/${projectID}/${userLanguage}`);
-                    const data = await response.json();
-                    if (typeof data === 'object') { 
-                        setI18NData(data);
-                    } else {
-                        setI18NData({})
-                    }
+                    data = await response.json();
                 } catch (error) {
                     console.log('@generaltranslation/react: No current internationalization found. One will be created dynamically based on your project settings.');
-                    setI18NData({});
                 }
+            }
+            if (userLanguage in languageJSONs) {
+                data = { ...data, ...languageJSONs[userLanguage] };
+            }
+            if (typeof data === 'object') { 
+                setI18NData(data);
+            } else {
+                setI18NData({})
             }
         }
         if (translationRequired && userLanguage) {

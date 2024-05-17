@@ -11,6 +11,7 @@ export default async function NextI18N({
     forceUserLanguage = '',
     i18nTags = ['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'],
     excludeTags = ["ExcludeI18N"],
+    remoteSource = true,
     ...languageJSONs
 }) {
     
@@ -27,16 +28,23 @@ export default async function NextI18N({
     }
 
     let I18NData;
-    try {
-        const response = await fetch(`https://json.gtx.dev/${projectID}/${userLanguage}`);
-        I18NData = await response.json();
-    } catch (error) {
-        console.log(error)
-        return (
-            <>
-                {children}
-            </>
-        )
+
+    if (remoteSource) {
+        try {
+            const response = await fetch(`https://json.gtx.dev/${projectID}/${userLanguage}`);
+            I18NData = await response.json();
+        } catch (error) {
+            console.log(error)
+            return (
+                <>
+                    {children}
+                </>
+            )
+        }
+    }
+
+    if (userLanguage in languageJSONs) {
+        I18NData ? languageJSONs[userLanguage] : { ...I18NData, ...languageJSONs[userLanguage] };
     }
 
     // CREATE HTML STRING FOR IDENTIFICATION
