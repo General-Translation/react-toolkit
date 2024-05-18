@@ -108,8 +108,7 @@ export default async function ServerI18N({
         const I18NStrings = I18NData[html];
         if (typeof child === 'string' && !I18NStrings?.[child]) {
             newStrings[html] = newStrings[html] || [];
-            const strings = newStrings[html];
-            strings.push(child);
+            newStrings[html].push(child);
         } 
         else if (React.isValidElement(child)) {
             const { type, props } = child;
@@ -170,8 +169,6 @@ export default async function ServerI18N({
     // TRANSLATE MISSING STRINGS
 
     let translations = I18NData;
-
-    console.log(translations)
 
     let newTranslations;
 
