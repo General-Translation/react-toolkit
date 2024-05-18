@@ -3,6 +3,7 @@
 import React from 'react';
 
 import GT, { getLanguageName } from 'generaltranslation';
+import _I18NStringResolver from './_I18NStringResolver';
 const defaultDriver = new GT()
 
 function deepMerge(obj1, obj2) {
@@ -21,7 +22,7 @@ export default async function ServerI18N({
     projectID = '',
     defaultLanguage = 'en',
     forceUserLanguage = '',
-    i18nTags = ['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'],
+    i18nTags = ['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'ol', 'ul'],
     excludeTags = ["ExcludeI18N"],
     remoteSource = true,
     gt = defaultDriver,
@@ -170,24 +171,34 @@ export default async function ServerI18N({
 
     let translations = I18NData;
 
+    let newTranslations;
+
     if (Object.keys(newStrings).length > 0) {
-        const newTranslations = await gt.translateHTML({
+        newTranslations = gt.translateHTML({
             projectID,
             userLanguage,
             defaultLanguage,
             content: newStrings
         })
-        if (typeof newTranslations === 'object') {
+        /*if (typeof newTranslations === 'object') {
            translations = deepMerge(newTranslations, I18NData);
-        }
+        }*/
     };
 
     // RENDER
 
     // Go through and replace strings
-    const renderStrings = (child, I18NStrings) => {
+    const renderStrings = (child, html) => {
         if (typeof child === 'string') {
-            return I18NStrings?.[child] || child;
+            if (translations?.[html]?.[child]) {
+                return translations[html][child]
+            } 
+            else if (newStrings?.[html]?.includes(child)) {
+                return <_I18NStringResolver html={html} I18NPromise={newTranslations}>{child}</_I18NStringResolver>
+            }
+            else {
+                return child;
+            }
         }
         else if (React.isValidElement(child)) {
             const { type, props } = child;
@@ -197,7 +208,7 @@ export default async function ServerI18N({
                 if (props.children) {
                     return React.cloneElement(child, {
                         ...props,
-                        children: React.Children.toArray(props.children).map(currentChild => renderStrings(currentChild, I18NStrings))
+                        children: React.Children.toArray(props.children).map(currentChild => renderStrings(currentChild, html))
                     });
                 }
                 else {
@@ -219,7 +230,7 @@ export default async function ServerI18N({
             } 
             else if (includeI18N(type)) {
                 const html = createChildrenString(child);
-                return renderStrings(child, translations[html])
+                return renderStrings(child, html)
             } 
             else {
                 if (props.children) {

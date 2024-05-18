@@ -4,8 +4,6 @@ import React, { useCallback } from 'react';
 import { getLanguageName } from 'generaltranslation';
 import { createContext, useEffect, useState, useContext } from 'react'
 
-import _I18NComponent from './_I18NComponent';
-
 const I18NContext = createContext();
 export const useI18NContext = () => useContext(I18NContext);
 
@@ -14,7 +12,7 @@ export default function I18NProvider({
     projectID = '',
     defaultLanguage = 'en',
     forceUserLanguage = '',
-    i18nTags = ['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'],
+    i18nTags = ['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'ol', 'ul'],
     excludeTags = ["ExcludeI18N"],
     remoteSource = true,
     ...languageJSONs
