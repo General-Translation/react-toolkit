@@ -31,7 +31,7 @@ export default async function ServerI18N({
 
     const userLanguage = forceUserLanguage || defaultLanguage;
     const translationRequired = projectID && (getLanguageName(userLanguage) !== getLanguageName(defaultLanguage)) ? true : false;
-    
+
     if (!translationRequired) {
         return (
             <>
@@ -171,15 +171,19 @@ export default async function ServerI18N({
 
     let translations = I18NData;
 
+    console.log(translations)
+
     let newTranslations;
 
     if (Object.keys(newStrings).length > 0) {
+        console.log('New translations required!');
         newTranslations = gt.translateHTML({
             projectID,
             userLanguage,
             defaultLanguage,
             content: newStrings
         })
+        console.log(newTranslations)
         /*if (typeof newTranslations === 'object') {
            translations = deepMerge(newTranslations, I18NData);
         }*/
