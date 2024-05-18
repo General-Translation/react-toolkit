@@ -164,7 +164,9 @@ export default async function ServerI18N({
         }
     }
 
-    traverseChildren(children);
+    React.Children.forEach(children, currentChild => {
+        traverseChildren(currentChild);
+    });
     
     // TRANSLATE MISSING STRINGS
 
@@ -173,14 +175,12 @@ export default async function ServerI18N({
     let newTranslations;
 
     if (Object.keys(newStrings).length > 0) {
-        console.log('New translations required!');
         newTranslations = gt.translateHTML({
             projectID,
             userLanguage,
             defaultLanguage,
             content: newStrings
         })
-        console.log(newTranslations)
         /*if (typeof newTranslations === 'object') {
            translations = deepMerge(newTranslations, I18NData);
         }*/
@@ -276,7 +276,7 @@ export default async function ServerI18N({
         }
     }
 
-    const I18NChildren = renderChildren(children);
+    const I18NChildren = React.Children.toArray(children).map(child => renderChildren(child))
 
     return (
         <>
