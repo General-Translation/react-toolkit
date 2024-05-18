@@ -1,6 +1,6 @@
 'use server'
 
-import React from 'react';
+import * as React from 'react'
 
 import GT, { getLanguageName } from 'generaltranslation';
 import _I18NStringResolver from './_I18NStringResolver';
@@ -284,3 +284,5 @@ export default async function ServerI18N({
     )
     
 }
+
+global.React = React;
