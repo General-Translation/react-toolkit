@@ -3,8 +3,9 @@
 import * as React from 'react'
 
 import GT, { getLanguageName } from 'generaltranslation';
+import { markedForExclude, markedForI18N } from './js/checkPrimitives';
 import _I18NStringResolver from './_I18NStringResolver';
-import renderStrings from './renderStrings';
+import { createChildrenString, renderStrings } from './js/renderStrings';
 
 const defaultDriver = new GT()
 
@@ -54,29 +55,6 @@ export default async function ServerI18N({
 
     // CREATE HTML STRING FOR IDENTIFICATION
 
-    const createChildrenString = (children) => {
-        return React.Children.map(children, child => {
-          if (React.isValidElement(child)) {
-            const { type, props } = child;
-            let currentChildren = '';
-            if (markedForExclude(type)) {
-                return `{variable}`
-            } else {
-                Object.entries(props)
-                .map(([key, value]) => {
-                    if (key === 'children') {
-                        currentChildren += createChildrenString(value);
-                        return ''
-                    }
-                })
-                .join('');
-                return `<${type?.displayName || type?.name || type}>${currentChildren}</${type?.displayName || type?.name || type}>`;
-            }
-          }
-          return child?.toString() || '';
-        }).join('');
-    }
-
     // CHECKS
 
     const shouldI18N = (type) => {
@@ -84,8 +62,6 @@ export default async function ServerI18N({
         if (i18nTags.includes(type?.name)) return true;
         else return false;
     };
-    const markedForI18N = (type) => type?.markedForI18N === true;
-    const markedForExclude = (type) => type?.markedForExclude === true;
 
     // TRAVERSE FOR NEW HTML TO TRANSLATE
 

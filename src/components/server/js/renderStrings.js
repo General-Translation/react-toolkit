@@ -1,6 +1,30 @@
 import * as React from 'react'
+import { markedForExclude } from './checkPrimitives';
 
-export default function renderStrings(child, translationArray) {
+export const createChildrenString = (children) => {
+    return React.Children.map(children, child => {
+      if (React.isValidElement(child)) {
+        const { type, props } = child;
+        let currentChildren = '';
+        if (markedForExclude(type)) {
+            return `{variable}`
+        } else {
+            Object.entries(props)
+            .map(([key, value]) => {
+                if (key === 'children') {
+                    currentChildren += createChildrenString(value);
+                    return ''
+                }
+            })
+            .join('');
+            return `<${type?.displayName || type?.name || ''}>${currentChildren}</${type?.displayName || type?.name || ''}>`;
+        }
+      }
+      return child?.toString() || '';
+    }).join('');
+}
+
+export const renderStrings = (child, translationArray) => {
         
     if (!translationArray) {
         return child;

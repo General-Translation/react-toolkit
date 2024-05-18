@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { useState, useEffect } from 'react';
-import renderStrings from './renderStrings';
+import { renderStrings } from './js/renderStrings';
 
 // children is always just a single child!
 export default function _I18NStringResolver({
