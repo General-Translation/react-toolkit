@@ -6,17 +6,6 @@ import GT, { getLanguageName } from 'generaltranslation';
 import _I18NStringResolver from './_I18NStringResolver';
 const defaultDriver = new GT()
 
-function deepMerge(obj1, obj2) {
-    for (let key in obj2) {
-        if (obj2[key] instanceof Object && key in obj1) {
-            obj1[key] = deepMerge(obj1[key], obj2[key]);
-        } else {
-            obj1[key] = obj2[key];
-        }
-    }
-    return obj1;
-}
-
 export default async function ServerI18N({
     children,
     projectID = '',
@@ -28,6 +17,8 @@ export default async function ServerI18N({
     gt = defaultDriver,
     ...languageJSONs
 }) {
+
+    console.log(children)
 
     const userLanguage = forceUserLanguage || defaultLanguage;
     const translationRequired = projectID && (getLanguageName(userLanguage) !== getLanguageName(defaultLanguage)) ? true : false;
@@ -67,7 +58,7 @@ export default async function ServerI18N({
           if (React.isValidElement(child)) {
             const { type, props } = child;
             let currentChildren = '';
-            if (excludeI18N(type)) {
+            if (markedForExclude(type)) {
                 return `{variable}`
             } else {
                 Object.entries(props)
@@ -87,109 +78,196 @@ export default async function ServerI18N({
 
     // CHECKS
 
-    const excludeI18N = (type) => {
-        if (excludeTags.includes(type)) return true;
-        if (excludeTags.includes(type?.name)) return true;
-        else return false;
-    };
-    const includeI18N = (type) => {
+    const shouldI18N = (type) => {
         if (i18nTags.includes(type)) return true;
         if (i18nTags.includes(type?.name)) return true;
         else return false;
     };
     const markedForI18N = (type) => type?.name === 'I18N';
+    const markedForExclude = (type) => {
+        if (excludeTags.includes(type)) return true;
+        if (excludeTags.includes(type?.name)) return true;
+        else return false;
+    };
 
-    // TRAVERSE FOR NEW TRANSLATIONS
+    // TRAVERSE FOR NEW HTML TO TRANSLATE
 
-    const newStrings = {}
+    const htmlStrings = [];
 
-    // Go through and collate strings
-    const traverseStrings = (child, html) => {
-        const I18NStrings = I18NData[html];
-        if (typeof child === 'string' && !I18NStrings?.[child]) {
-            newStrings[html] = newStrings[html] || [];
-            newStrings[html].push(child);
-        } 
-        else if (React.isValidElement(child)) {
-            const { type, props } = child;
-            if (!excludeI18N(type)) {
-                React.Children.forEach(props.children, currentChild => {
-                    return traverseStrings(currentChild, html);
-                });
-            }
-        }
-    }
-
-    // Go through I18Ns for matching children
     const traverseI18N = (child) => {
         if (React.isValidElement(child)) {   
             const { type, props } = child;
-            if (excludeI18N(type)) {
-                return;
+            if (!markedForExclude(type)) {
+                if (shouldI18N(type)) {
+                    const html = createChildrenString(child);
+                    if (!I18NData?.[html]) {
+                        htmlStrings.push(html);
+                    };
+                } else {
+                    React.Children.forEach(props.children, currentChild => {
+                        return traverseI18N(currentChild)
+                    });
+                }
             } 
-            else if (includeI18N(type)) {
-                const html = createChildrenString(child);
-                traverseStrings(child, html);
-            } 
-            else {
-                React.Children.forEach(props.children, currentChild => {
-                    return traverseI18N(currentChild)
-                });
-            }
         }
     }
 
-    // Go through and find I18Ns, ignoring ExcludeI18Ns
     const traverseChildren = (child) => {
         if (React.isValidElement(child)) {   
             const { type, props } = child;
-            if (excludeI18N(type)) {
-                return;
-            } 
-            else if (markedForI18N(type)) {
-                React.Children.forEach(props.children, currentChild => {
-                    return traverseI18N(currentChild)
-                    /*if (typeof currentChild === 'string') {
-                        newStrings[currentChild] = [currentChild];
-                    } else {
+            if (!markedForExclude(type)) {
+                if (markedForI18N(type)) {
+                    React.Children.forEach(props.children, currentChild => {
                         return traverseI18N(currentChild)
-                    }*/
-                });
+                    });
+                } else {
+                    React.Children.forEach(props.children, currentChild => {
+                        return traverseChildren(currentChild)
+                    });
+                }
             } 
-            else {
-                React.Children.forEach(props.children, currentChild => {
-                    return traverseChildren(currentChild)
-                });
-            }
+            
         }
     }
 
-    React.Children.forEach(children, currentChild => {
-        traverseChildren(currentChild);
+    React.Children.forEach(children, child => {
+        traverseChildren(child); // every child is searched sequentially
     });
     
-    // TRANSLATE MISSING STRINGS
+    // TRANSLATE MISSING HTML
 
-    let translations = I18NData;
-
-    let newTranslations;
-
-    if (Object.keys(newStrings).length > 0) {
-        newTranslations = gt.translateHTML({
+    let translations;
+    if (htmlStrings.length > 0) {
+        translations = gt.translateHTML({
             projectID,
             userLanguage,
             defaultLanguage,
-            content: newStrings
-        })
-        /*if (typeof newTranslations === 'object') {
-           translations = deepMerge(newTranslations, I18NData);
-        }*/
+            content: htmlStrings
+        });
     };
+
+    // RENDERING
+
+    // an example of what the I18NData const could look like
+    // (translations is just the latest additions to I18NData, so it looks similar)
+    /* 
+        {
+            "<p><b>Ron's <i>ill</i></b> mother</p>": [
+                "La madre",
+                {
+                    "<b>Ron's <i>ill</i></b>":
+                    [
+                        {
+                            "<i>ill</i>": [
+                                "enferma"
+                            ]
+                        },
+                        "de Ron"
+                    ]
+                }
+            ]
+        }
+    */
+
+    const renderStrings = (child, translationArray) => {
+        
+        if (!translationArray) {
+            return child;
+        };
+
+        if (React.isValidElement(child)) {
+            const { type, props } = child;
+            if (markedForExclude(type)) {
+                return child;
+            } 
+            else if (props.children) {
+                const validChildren = {};
+                React.Children.forEach(props.children, currentChild => {
+                    if (React.isValidElement(currentChild)) {
+                        const html = createChildrenString(currentChild);
+                        validChildren[html] = currentChild;
+                    }
+                });
+                return React.cloneElement(child, {
+                    ...props,
+                    children: translationArray.map(item => {
+                        if (typeof item === 'string') {
+                            return item;
+                        } 
+                        else { // (typeof item === 'object')
+                            const key = Object.keys(item)[0]; // only one attribute here
+                            return renderStrings(validChildren[key], item[key])
+                        }
+                    })
+                });
+            } 
+        }
+
+        // else
+        return child;
+    }
+
+    const renderI18N = (child) => {
+        if (React.isValidElement(child)) {   
+            const { type, props } = child;
+            if (markedForExclude(type)) {
+                return child;
+            } 
+            else if (shouldI18N(type)) {
+                const html = createChildrenString(child);
+                if (I18NData?.[html]) {
+                    return renderStrings(child, I18NData?.[html]);
+                } else {
+                    return <_I18NStringResolver promise={translations} html={html}>{child}</_I18NStringResolver>
+                };
+            } 
+            else {
+                if (props.children) {
+                    return React.cloneElement(child, {
+                        ...props,
+                        children: React.Children.toArray(props.children).map(currentChild => renderI18N(currentChild))
+                    });
+                }
+                else {
+                    return child;
+                }
+            }
+        } else {
+            return child;
+        }
+    }
+
+    const renderChildren = (child) => {
+        if (React.isValidElement(child)) {
+            const { type, props } = child;
+            if (markedForExclude(type)) {
+                return child;
+            }
+            else if (markedForI18N(type)) {
+                return renderI18N(child);
+            }
+            else {
+                if (props.children) {
+                    return React.cloneElement(child, {
+                        ...props,
+                        children: React.Children.toArray(props.children).map(currentChild => renderChildren(currentChild))
+                    });
+                }
+                else {
+                    return child;
+                }
+            }
+        } else {
+            return child;
+        }
+    }
+
+    const I18NChildren = React.Children.toArray(children).map(child => renderChildren(child))
 
     // RENDER
 
     // Go through and replace strings
-    const renderStrings = (child, html) => {
+    /*const renderStrings = (child, html) => {
         if (typeof child === 'string') {
             if (translations?.[html]?.[child]) {
                 return translations[html][child]
@@ -220,7 +298,9 @@ export default async function ServerI18N({
         else {
             return child;
         }
-    }
+    }*/
+
+        /*
 
     // Go through and replace in appropriate tags
     const renderI18N = (child) => {
@@ -231,7 +311,14 @@ export default async function ServerI18N({
             } 
             else if (includeI18N(type)) {
                 const html = createChildrenString(child);
-                return renderStrings(child, html)
+                // iterate through translations children
+                // if typeof child === string, return it
+                // else continue to iterate through children until a valid element is found
+                // recursively do that element
+                // continue
+                // Go through HT
+                //
+                //return renderStrings(child, html)
             } 
             else {
                 if (props.children) {
@@ -274,10 +361,10 @@ export default async function ServerI18N({
         } else {
             return child;
         }
-    }
+    }*/
 
-    const I18NChildren = React.Children.toArray(children).map(child => renderChildren(child))
-
+    // const I18NChildren = React.Children.toArray(children).map(child => renderChildren(child))
+    
     return (
         <>
             {I18NChildren}

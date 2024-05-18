@@ -1,20 +1,20 @@
 'use client'
 
-import React from 'react'
-
+import React from 'react';
 import { useState, useEffect } from 'react';
+import renderStrings from './renderStrings';
 
-// children should just be a string
+// children is always just a single child!
 export default function _I18NStringResolver({
-    children, html, I18NPromise
+    children, promise, html
 }) {
 
     const [translation, setTranslation] = useState(null)
 
     useEffect(() => {
         const resolveI18NPromise = async () => {
-            const I18NData = await I18NPromise;
-            setTranslation(I18NData?.[html]?.[children])
+            const I18NData = await promise;
+            setTranslation(renderStrings(children, I18NData?.[html]));
         }
         resolveI18NPromise();
     }, [I18NPromise])
