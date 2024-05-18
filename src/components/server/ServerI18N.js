@@ -4,6 +4,8 @@ import * as React from 'react'
 
 import GT, { getLanguageName } from 'generaltranslation';
 import _I18NStringResolver from './_I18NStringResolver';
+import renderStrings from './renderStrings';
+
 const defaultDriver = new GT()
 
 export default async function ServerI18N({
@@ -12,7 +14,6 @@ export default async function ServerI18N({
     defaultLanguage = 'en',
     forceUserLanguage = '',
     i18nTags = ['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'ol', 'ul'],
-    excludeTags = ["ExcludeI18N"],
     remoteSource = true,
     gt = defaultDriver,
     ...languageJSONs
@@ -83,12 +84,8 @@ export default async function ServerI18N({
         if (i18nTags.includes(type?.name)) return true;
         else return false;
     };
-    const markedForI18N = (type) => type?.name === 'I18N';
-    const markedForExclude = (type) => {
-        if (excludeTags.includes(type)) return true;
-        if (excludeTags.includes(type?.name)) return true;
-        else return false;
-    };
+    const markedForI18N = (type) => type?.markedForI18N === true;
+    const markedForExclude = (type) => type?.markedForExclude === true;
 
     // TRAVERSE FOR NEW HTML TO TRANSLATE
 
@@ -169,44 +166,6 @@ export default async function ServerI18N({
         }
     */
 
-    const renderStrings = (child, translationArray) => {
-        
-        if (!translationArray) {
-            return child;
-        };
-
-        if (React.isValidElement(child)) {
-            const { type, props } = child;
-            if (markedForExclude(type)) {
-                return child;
-            } 
-            else if (props.children) {
-                const validChildren = {};
-                React.Children.forEach(props.children, currentChild => {
-                    if (React.isValidElement(currentChild)) {
-                        const html = createChildrenString(currentChild);
-                        validChildren[html] = currentChild;
-                    }
-                });
-                return React.cloneElement(child, {
-                    ...props,
-                    children: translationArray.map(item => {
-                        if (typeof item === 'string') {
-                            return item;
-                        } 
-                        else { // (typeof item === 'object')
-                            const key = Object.keys(item)[0]; // only one attribute here
-                            return renderStrings(validChildren[key], item[key])
-                        }
-                    })
-                });
-            } 
-        }
-
-        // else
-        return child;
-    }
-
     const renderI18N = (child) => {
         if (React.isValidElement(child)) {   
             const { type, props } = child;
@@ -264,107 +223,6 @@ export default async function ServerI18N({
 
     const I18NChildren = React.Children.toArray(children).map(child => renderChildren(child))
 
-    // RENDER
-
-    // Go through and replace strings
-    /*const renderStrings = (child, html) => {
-        if (typeof child === 'string') {
-            if (translations?.[html]?.[child]) {
-                return translations[html][child]
-            } 
-            else if (newStrings?.[html]?.includes(child)) {
-                return <_I18NStringResolver html={html} I18NPromise={newTranslations}>{child}</_I18NStringResolver>
-            }
-            else {
-                return child;
-            }
-        }
-        else if (React.isValidElement(child)) {
-            const { type, props } = child;
-            if (excludeI18N(type)) {
-                return child;
-            } else {
-                if (props.children) {
-                    return React.cloneElement(child, {
-                        ...props,
-                        children: React.Children.toArray(props.children).map(currentChild => renderStrings(currentChild, html))
-                    });
-                }
-                else {
-                    return child;
-                }
-            }
-        } 
-        else {
-            return child;
-        }
-    }*/
-
-        /*
-
-    // Go through and replace in appropriate tags
-    const renderI18N = (child) => {
-        if (React.isValidElement(child)) {   
-            const { type, props } = child;
-            if (excludeI18N(type)) {
-                return child;
-            } 
-            else if (includeI18N(type)) {
-                const html = createChildrenString(child);
-                // iterate through translations children
-                // if typeof child === string, return it
-                // else continue to iterate through children until a valid element is found
-                // recursively do that element
-                // continue
-                // Go through HT
-                //
-                //return renderStrings(child, html)
-            } 
-            else {
-                if (props.children) {
-                    return React.cloneElement(child, {
-                        ...props,
-                        children: React.Children.toArray(props.children).map(currentChild => renderI18N(currentChild))
-                    });
-                }
-                else {
-                    return child;
-                }
-            }
-        } 
-        else {
-            return child;
-        }
-    }
-
-    // Go through and find I18Ns, ignoring ExcludeI18Ns
-    const renderChildren = (child) => {
-        if (React.isValidElement(child)) {
-            const { type, props } = child;
-            if (excludeI18N(type)) {
-                return child;
-            }
-            else if (markedForI18N(type)) {
-                return renderI18N(child);
-            }
-            else {
-                if (props.children) {
-                    return React.cloneElement(child, {
-                        ...props,
-                        children: React.Children.toArray(props.children).map(currentChild => renderChildren(currentChild))
-                    });
-                }
-                else {
-                    return child;
-                }
-            }
-        } else {
-            return child;
-        }
-    }*/
-
-    // const I18NChildren = React.Children.toArray(children).map(child => renderChildren(child))
-    
     return (
         <>
             {I18NChildren}

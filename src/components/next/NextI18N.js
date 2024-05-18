@@ -9,7 +9,6 @@ export default async function NextI18N({
     defaultLanguage = 'en',
     forceUserLanguage = '',
     i18nTags = ['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'ol', 'ul'],
-    excludeTags = ["ExcludeI18N"],
     remoteSource = true,
     ...languageJSONs
 }) {
@@ -23,7 +22,6 @@ export default async function NextI18N({
             projectID={projectID}
             defaultLanguage={defaultLanguage}
             i18nTags={i18nTags}
-            excludeTags={excludeTags}
             remoteSource={remoteSource}
             {...languageJSONs}
         >

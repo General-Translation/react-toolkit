@@ -1,9 +1,13 @@
 import React from 'react'
 
-export default function ExcludeI18N({ children }) {
+const ExcludeI18N = ({ children }) => {
     return (
         <>
             {children}
         </>
     );
 }
+
+ExcludeI18N.markedForExclude = true;
+
+export default ExcludeI18N;
