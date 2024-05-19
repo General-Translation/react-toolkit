@@ -17,7 +17,8 @@ export const createChildrenString = (children) => {
                 }
             })
             .join('');
-            return `<${type?.displayName || type?.name || ''}>${currentChildren}</${type?.displayName || type?.name || ''}>`;
+            const tag = type?.displayName || type?.name || ((typeof type !== Error) ? type?.toString() : '' || '')
+            return `<${tag}>${currentChildren}</${tag}>`;
         }
       }
       return child?.toString() || '';
@@ -43,18 +44,27 @@ export const renderStrings = (child, translationArray) => {
                     validChildren[html] = currentChild;
                 }
             });
-            return React.cloneElement(child, {
-                ...props,
-                children: translationArray.map(item => {
-                    if (typeof item === 'string') {
-                        return item;
-                    } 
-                    else { // (typeof item === 'object')
-                        const key = Object.keys(item)[0]; // only one attribute here
-                        return renderStrings(validChildren[key], item[key])
-                    }
-                })
-            });
+            if (translationArray && Array.isArray(translationArray) && translationArray.length > 0) {
+                return React.cloneElement(child, {
+                    ...props,
+                    children: translationArray.map((item, index) => {
+                        if (typeof item === 'string') {
+                            return <React.Fragment key={index}>{item}</React.Fragment>;
+                        } 
+                        else { // (typeof item === 'object')
+                            const key = Object.keys(item)[0]; // only one attribute here
+                            return <React.Fragment key={index}>{renderStrings(validChildren[key], item[key])}</React.Fragment>
+                        }
+                    })
+                });
+            } else if (typeof translationArray === 'string') {
+                return React.cloneElement(child, {
+                    ...props,
+                    children: translationArray
+                });
+            }
+            else return child;
+            
         } 
     }
 

@@ -14,10 +14,13 @@ export default function _I18NStringResolver({
     useEffect(() => {
         const resolveI18NPromise = async () => {
             const I18NData = await promise;
-            setTranslation(renderStrings(children, I18NData?.[html]));
+            console.log('data', JSON.stringify(I18NData));
+            if (I18NData?.[html]) {
+                setTranslation(renderStrings(children, I18NData?.[html]));
+            }
         }
         resolveI18NPromise();
-    }, [I18NPromise])
+    }, [promise])
 
     return (
         <>
