@@ -1,6 +1,6 @@
 {
   "name": "@generaltranslation/react",
-  "version": "1.0.33",
+  "version": "1.0.105",
   "description": "",
   "main": "lib/index.js",
   "peerDependencies": {
@@ -11,6 +11,7 @@
     "generaltranslation": "^1.2.5"
   },
   "scripts": {
+    "prepare": "node prepare.js",
     "transpile": "npx babel src -d lib",
     "test": "echo \"Error: no test specified\" && exit 1"
   },

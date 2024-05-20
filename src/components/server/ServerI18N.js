@@ -5,13 +5,15 @@ import * as React from 'react'
 import GT, { getLanguageName } from 'generaltranslation';
 import { markedForExclude, markedForI18N } from './js/checkPrimitives';
 import _I18NStringResolver from './_I18NStringResolver';
-import { createChildrenString, renderStrings } from './js/renderStrings';
+import { ComponentNamer, createChildrenString, renderStrings } from './js/renderStrings';
 
 const defaultDriver = new GT()
+const defaultProjectID = (typeof process !== 'undefined' ? process?.env?.GT_PROJECT_ID : '')
 
 export default async function ServerI18N({
     children,
-    projectID = '',
+    projectID,
+    page = 'default',
     defaultLanguage = 'en',
     forceUserLanguage = '',
     i18nTags = ['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'ol', 'ul'],
@@ -20,10 +22,10 @@ export default async function ServerI18N({
     ...languageJSONs
 }) {
 
-    console.log(children)
-
+    if (!projectID) projectID = defaultProjectID;
+    
     const userLanguage = forceUserLanguage || defaultLanguage;
-    const translationRequired = projectID && (getLanguageName(userLanguage) !== getLanguageName(defaultLanguage)) ? true : false;
+    const translationRequired = projectID && page && (getLanguageName(userLanguage) !== getLanguageName(defaultLanguage)) ? true : false;
 
     if (!translationRequired) {
         return (
@@ -37,7 +39,7 @@ export default async function ServerI18N({
 
     if (remoteSource) {
         try {
-            const response = await fetch(`https://json.gtx.dev/${projectID}/${userLanguage}`);
+            const response = await fetch(`https://json.gtx.dev/${projectID}/${page}/${userLanguage}`);
             I18NData = await response.json();
         } catch (error) {
             console.error(error)
@@ -72,8 +74,8 @@ export default async function ServerI18N({
             const { type, props } = child;
             if (!markedForExclude(type)) {
                 if (shouldI18N(type)) {
-                    const html = createChildrenString(child);
-                    if (!I18NData?.[html]) {
+                    const html = createChildrenString(child, new ComponentNamer());
+                    if (!I18NData[html]) {
                         htmlStrings.push(html);
                     };
                 } else {
@@ -113,6 +115,7 @@ export default async function ServerI18N({
     if (htmlStrings.length > 0) {
         translations = gt.translateHTML({
             projectID,
+            page,
             userLanguage,
             defaultLanguage,
             content: htmlStrings
@@ -149,7 +152,7 @@ export default async function ServerI18N({
                 return child;
             } 
             else if (shouldI18N(type)) {
-                const html = createChildrenString(child);
+                const html = createChildrenString(child, new ComponentNamer());
                 if (I18NData?.[html]) {
                     return renderStrings(child, I18NData?.[html]);
                 } else {

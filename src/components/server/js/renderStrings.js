@@ -1,7 +1,30 @@
 import * as React from 'react'
 import { markedForExclude } from './checkPrimitives';
 
-export const createChildrenString = (children) => {
+export class ComponentNamer {
+    constructor() {
+        this.counter = 0;
+        this.greekLetters = ['alpha', 'beta', 'gamma', 'delta', 'epsilon', 'zeta', 'eta', 'theta', 'iota', 'kappa', 'lambda', 'mu', 'nu', 'xi', 'omicron', 'pi', 'rho', 'sigma', 'tau', 'upsilon', 'phi', 'chi', 'psi', 'omega'];
+    }
+    getNext() {
+        const index = this.counter % this.greekLetters.length;
+        const letter = this.greekLetters[index];       
+        this.counter++;
+        return letter;
+    }
+}
+
+const getTagName = (child, componentNamer) => {
+    if (!child) return '';
+    const { type, props } = child;
+    if (type?.displayName) return type?.displayName;
+    if (type?.name) return type?.name;
+    if (typeof type === 'string') return type;
+    if (props?.href) return 'a';
+    return componentNamer.getNext();
+}
+
+export const createChildrenString = (children, componentNamer) => {
     return React.Children.map(children, child => {
       if (React.isValidElement(child)) {
         const { type, props } = child;
@@ -9,19 +32,22 @@ export const createChildrenString = (children) => {
         if (markedForExclude(type)) {
             return `{variable}`
         } else {
-            Object.entries(props)
-            .map(([key, value]) => {
+            if (props?.children) {
+                Object.entries(props)
+                .map(([key, value]) => {
                 if (key === 'children') {
-                    currentChildren += createChildrenString(value);
+                    currentChildren += createChildrenString(value, componentNamer);
                     return ''
                 }
-            })
-            .join('');
-            const tag = type?.displayName || type?.name || ((typeof type !== Error) ? type?.toString() : '' || '')
-            return `<${tag}>${currentChildren}</${tag}>`;
+                })
+                .join('');
+                const tag = getTagName(child, componentNamer);
+                return `<${tag}>${currentChildren}</${tag}>`;
+            }
         }
+      } else if (typeof child === 'string') {
+        return child;
       }
-      return child?.toString() || '';
     }).join('');
 }
 
@@ -40,7 +66,7 @@ export const renderStrings = (child, translationArray) => {
             const validChildren = {};
             React.Children.forEach(props.children, currentChild => {
                 if (React.isValidElement(currentChild)) {
-                    const html = createChildrenString(currentChild);
+                    const html = createChildrenString(currentChild, new ComponentNamer());
                     validChildren[html] = currentChild;
                 }
             });
@@ -56,11 +82,6 @@ export const renderStrings = (child, translationArray) => {
                             return <React.Fragment key={index}>{renderStrings(validChildren[key], item[key])}</React.Fragment>
                         }
                     })
-                });
-            } else if (typeof translationArray === 'string') {
-                return React.cloneElement(child, {
-                    ...props,
-                    children: translationArray
                 });
             }
             else return child;

@@ -14,7 +14,6 @@ export default function _I18NStringResolver({
     useEffect(() => {
         const resolveI18NPromise = async () => {
             const I18NData = await promise;
-            console.log('data', JSON.stringify(I18NData));
             if (I18NData?.[html]) {
                 setTranslation(renderStrings(children, I18NData?.[html]));
             }
