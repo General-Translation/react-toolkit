@@ -16,10 +16,9 @@ export default async function ServerI18N({
     page = 'default',
     defaultLanguage = 'en',
     forceUserLanguage = '',
-    i18nTags = ['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'ol', 'ul'],
     remoteSource = true,
     gt = defaultDriver,
-    ...languageJSONs
+    ...metadata
 }) {
 
     if (!projectID) projectID = defaultProjectID;
@@ -51,54 +50,32 @@ export default async function ServerI18N({
         }
     }
 
-    if (userLanguage in languageJSONs) {
-        I18NData ? languageJSONs[userLanguage] : { ...I18NData, ...languageJSONs[userLanguage] };
+    if (userLanguage in metadata) {
+        I18NData ? metadata[userLanguage] : { ...I18NData, ...metadata[userLanguage] };
     }
-
-    // CREATE HTML STRING FOR IDENTIFICATION
-
-    // CHECKS
-
-    const shouldI18N = (type) => {
-        if (i18nTags.includes(type)) return true;
-        if (i18nTags.includes(type?.name)) return true;
-        else return false;
-    };
 
     // TRAVERSE FOR NEW HTML TO TRANSLATE
 
     const htmlStrings = [];
 
-    const traverseI18N = (child) => {
-        if (React.isValidElement(child)) {   
-            const { type, props } = child;
-            if (!markedForExclude(type)) {
-                if (shouldI18N(type)) {
-                    const html = createChildrenString(child, new ComponentNamer());
-                    if (!I18NData[html]) {
-                        htmlStrings.push(html);
-                    };
-                } else {
-                    React.Children.forEach(props.children, currentChild => {
-                        return traverseI18N(currentChild)
-                    });
-                }
-            } 
-        }
-    }
-
     const traverseChildren = (child) => {
         if (React.isValidElement(child)) {   
             const { type, props } = child;
             if (!markedForExclude(type)) {
-                if (markedForI18N(type)) {
-                    React.Children.forEach(props.children, currentChild => {
-                        return traverseI18N(currentChild)
-                    });
-                } else {
-                    React.Children.forEach(props.children, currentChild => {
-                        return traverseChildren(currentChild)
-                    });
+                if (props.children) {
+                    if (markedForI18N(type)) {
+                        return React.Children.forEach(props.children, currentChild => {
+                            const html = createChildrenString(currentChild, new ComponentNamer());
+                            console.log(html)
+                            if (!I18NData[html]) {
+                                htmlStrings.push(html);
+                            };
+                        });
+                    } else {
+                        return React.Children.forEach(props.children, currentChild => {
+                            return traverseChildren(currentChild)
+                        });
+                    }
                 }
             } 
             
@@ -113,12 +90,20 @@ export default async function ServerI18N({
 
     let translations;
     if (htmlStrings.length > 0) {
+
+        let metadataToSend = {};
+
+        if (metadata.hasOwnProperty('url')) {
+            metadataToSend.url = metadata.url;
+        }
+
         translations = gt.translateHTML({
             projectID,
             page,
             userLanguage,
             defaultLanguage,
-            content: htmlStrings
+            content: htmlStrings,
+            ...metadataToSend
         });
     };
 
@@ -145,62 +130,39 @@ export default async function ServerI18N({
         }
     */
 
-    const renderI18N = (child) => {
-        if (React.isValidElement(child)) {   
-            const { type, props } = child;
-            if (markedForExclude(type)) {
-                return child;
-            } 
-            else if (shouldI18N(type)) {
-                const html = createChildrenString(child, new ComponentNamer());
-                if (I18NData?.[html]) {
-                    return renderStrings(child, I18NData?.[html]);
-                } else {
-                    return <_I18NStringResolver promise={translations} html={html}>{child}</_I18NStringResolver>
-                };
-            } 
-            else {
-                if (props.children) {
-                    return React.cloneElement(child, {
-                        ...props,
-                        children: React.Children.toArray(props.children).map(currentChild => renderI18N(currentChild))
-                    });
-                }
-                else {
-                    return child;
-                }
-            }
-        } else {
-            return child;
-        }
-    }
-
     const renderChildren = (child) => {
+        console.log(child)
         if (React.isValidElement(child)) {
             const { type, props } = child;
             if (markedForExclude(type)) {
                 return child;
             }
-            else if (markedForI18N(type)) {
-                return renderI18N(child);
-            }
-            else {
-                if (props.children) {
-                    return React.cloneElement(child, {
-                        ...props,
-                        children: React.Children.toArray(props.children).map(currentChild => renderChildren(currentChild))
+            if (props.children) {
+                if (markedForI18N(type)) {
+                    return React.Children.forEach(props.children, currentChild => {
+                        const html = createChildrenString(currentChild, new ComponentNamer());
+                        if (I18NData?.[html]) {
+                            return renderStrings(currentChild, I18NData?.[html]);
+                        } else {
+                            return <_I18NStringResolver promise={translations} html={html}>{currentChild}</_I18NStringResolver>
+                        };
                     });
                 }
-                else {
-                    return child;
-                }
+                return React.cloneElement(child, {
+                    ...props,
+                    children: React.Children.toArray(props.children).map((currentChild, index) => {
+                        return <React.Fragment key={index}>{renderChildren(currentChild)}</React.Fragment>
+                    })
+                });
+                    
             }
-        } else {
-            return child;
         }
+        return child;
     }
 
-    const I18NChildren = React.Children.toArray(children).map(child => renderChildren(child))
+    const I18NChildren = React.Children.toArray(children).map((child, index) => {
+        return <React.Fragment key={index}>{renderChildren(child)}</React.Fragment>
+    })
 
     return (
         <>

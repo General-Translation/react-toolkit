@@ -85,7 +85,6 @@ export const renderStrings = (child, translationArray) => {
                 });
             }
             else return child;
-            
         } 
     }
 
