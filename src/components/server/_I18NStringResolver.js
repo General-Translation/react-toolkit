@@ -9,10 +9,7 @@ export default function _I18NStringResolver({
     children, promise, html
 }) {
 
-    console.log(children)
-    console.log(html)
-
-    const [translation, setTranslation] = useState(null)
+    const [translation, setTranslation] = useState(null);
 
     useEffect(() => {
         const resolveI18NPromise = async () => {
@@ -23,8 +20,6 @@ export default function _I18NStringResolver({
         }
         resolveI18NPromise();
     }, [promise])
-
-    console.log(translation)
 
     return (
         <>

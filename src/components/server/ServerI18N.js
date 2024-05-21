@@ -66,7 +66,6 @@ export default async function ServerI18N({
                     if (markedForI18N(type)) {
                         return React.Children.forEach(props.children, currentChild => {
                             const html = createChildrenString(currentChild, new ComponentNamer());
-                            console.log(html)
                             if (!I18NData[html]) {
                                 htmlStrings.push(html);
                             };
@@ -96,6 +95,15 @@ export default async function ServerI18N({
         if (metadata.hasOwnProperty('url')) {
             metadataToSend.url = metadata.url;
         }
+
+        console.log(JSON.stringify({
+            projectID,
+            page,
+            userLanguage,
+            defaultLanguage,
+            content: htmlStrings,
+            ...metadataToSend
+        }))
 
         translations = gt.translateHTML({
             projectID,
@@ -131,7 +139,6 @@ export default async function ServerI18N({
     */
 
     const renderChildren = (child) => {
-        console.log(child)
         if (React.isValidElement(child)) {
             const { type, props } = child;
             if (markedForExclude(type)) {
@@ -139,7 +146,7 @@ export default async function ServerI18N({
             }
             if (props.children) {
                 if (markedForI18N(type)) {
-                    return React.Children.forEach(props.children, currentChild => {
+                    React.Children.forEach(props.children, currentChild => {
                         const html = createChildrenString(currentChild, new ComponentNamer());
                         if (I18NData?.[html]) {
                             return renderStrings(currentChild, I18NData?.[html]);
