@@ -7,7 +7,6 @@ import { markedForExclude, markedForI18N } from './js/checkPrimitives';
 import _I18NStringResolver from './_I18NStringResolver';
 import { ComponentNamer, createChildrenString, renderStrings } from './js/renderStrings';
 
-const defaultDriver = new GT()
 const defaultProjectID = (typeof process !== 'undefined' ? process?.env?.GT_PROJECT_ID : '')
 
 export default async function ServerI18N({
@@ -17,7 +16,7 @@ export default async function ServerI18N({
     defaultLanguage = 'en',
     forceUserLanguage = '',
     remoteSource = true,
-    gt = defaultDriver,
+    gt = null,
     ...metadata
 }) {
 
@@ -89,24 +88,14 @@ export default async function ServerI18N({
 
     let translations;
     if (htmlStrings.length > 0) {
-
         let metadataToSend = {};
-
         if (metadata.hasOwnProperty('url')) {
             metadataToSend.url = metadata.url;
         }
-
-        console.log(JSON.stringify({
-            projectID,
-            page,
-            userLanguage,
-            defaultLanguage,
-            content: htmlStrings,
-            ...metadataToSend
-        }))
-
+        if (!gt) {
+            gt = new GT({ defaultLanguage: defaultLanguage, projectID: projectID });
+        }
         translations = gt.translateHTML({
-            projectID,
             page,
             userLanguage,
             defaultLanguage,
@@ -146,7 +135,7 @@ export default async function ServerI18N({
             }
             if (props.children) {
                 if (markedForI18N(type)) {
-                    React.Children.forEach(props.children, currentChild => {
+                    return React.Children.map(props.children, currentChild => {
                         const html = createChildrenString(currentChild, new ComponentNamer());
                         if (I18NData?.[html]) {
                             return renderStrings(currentChild, I18NData?.[html]);

@@ -24,6 +24,13 @@ const getTagName = (child, componentNamer) => {
     return componentNamer.getNext();
 }
 
+function escapeHTML(string) {
+    return string.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+function reverseEscapeHTML(string) {
+    return string.replace(/&lt;/g, "<").replace(/&gt;/g, ">");
+}
+
 export const createChildrenString = (children, componentNamer) => {
     return React.Children.map(children, child => {
       if (React.isValidElement(child)) {
@@ -46,7 +53,7 @@ export const createChildrenString = (children, componentNamer) => {
             }
         }
       } else if (typeof child === 'string') {
-        return child;
+        return escapeHTML(child);
       }
     }).join('');
 }
@@ -56,6 +63,10 @@ export const renderStrings = (child, translationArray) => {
     if (!translationArray) {
         return child;
     };
+
+    if (typeof child === 'string') {
+        return translationArray?.[0] || child;
+    }
 
     if (React.isValidElement(child)) {
         const { type, props } = child;
@@ -75,7 +86,7 @@ export const renderStrings = (child, translationArray) => {
                     ...props,
                     children: translationArray.map((item, index) => {
                         if (typeof item === 'string') {
-                            return <React.Fragment key={index}>{item}</React.Fragment>;
+                            return <React.Fragment key={index}>{reverseEscapeHTML(item)}</React.Fragment>;
                         } 
                         else { // (typeof item === 'object')
                             const key = Object.keys(item)[0]; // only one attribute here
