@@ -1,12 +1,13 @@
 'use client'
 
-import React from 'react';
-import { useState, useEffect } from 'react';
-import { renderStrings } from './js/renderStrings';
+import React from 'react'
 
-// children is always just a single child!
-export default function _I18NStringResolver({
-    children, promise, html
+import { useEffect, useState } from "react";
+import renderChildren from "./js/renderChildren";
+import { ComponentNamer } from "./js/createChildrenString";
+
+export default function _I18NResolver({
+    children, promise, htmlString
 }) {
 
     const [translation, setTranslation] = useState(null);
@@ -14,8 +15,8 @@ export default function _I18NStringResolver({
     useEffect(() => {
         const resolveI18NPromise = async () => {
             const I18NData = await promise;
-            if (I18NData?.[html]) {
-                setTranslation(renderStrings(children, I18NData?.[html]));
+            if (I18NData?.[htmlString]) {
+                setTranslation(renderChildren(children, I18NData?.[htmlString], new ComponentNamer()));
             }
         }
         resolveI18NPromise();
@@ -32,4 +33,5 @@ export default function _I18NStringResolver({
             }
         </>
     )
+
 }

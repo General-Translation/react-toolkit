@@ -1,6 +1,7 @@
 import GT from 'generaltranslation'
+import I18NConfig from './I18NConfig';
 
-export class TranslationManager {
+export default class I18NManager {
     constructor({
         maxConcurrentRequests = 3,
         batchInterval = 100,
@@ -19,7 +20,7 @@ export class TranslationManager {
         this.startBatching();
     }
 
-    async translate(params) {
+    async translateHTML(params) {
         return new Promise((resolve, reject) => {
             this.queue.push({ params, resolve, reject });
         });
@@ -29,11 +30,17 @@ export class TranslationManager {
         this.activeRequests++;
         try {
             // Combine batch into a request array to be sent to the endpoint
-            // looking like: [{ content: params.string, language: params.language}]
-            const contentArray = batch.map(item => item.params.string);
-            const translationArray = await this.gt.translateMany(contentArray, batch[0].params.language)
+            // Array of htmlStrings
+            const htmlStrings = batch.map(item => item.params.htmlString);
+            const I18NData = await this.gt.translateHTML({
+                content: htmlStrings,
+                page: I18NConfig.page,
+                userLanguage: I18NConfig.userLanguage,
+                defaultLanguage: I18NConfig.defaultLanguage,
+                ...I18NConfig.metadata
+            })
             batch.forEach((item, index) => {
-                item.resolve(translationArray[index]);
+                item.resolve(I18NData);
             });
         } catch (error) {
             batch.forEach(item => item.reject(error));
@@ -51,7 +58,3 @@ export class TranslationManager {
         }, this.batchInterval);
     }
 }
-
-const defaultTranslationManager = new TranslationManager();
-
-export default defaultTranslationManager;
