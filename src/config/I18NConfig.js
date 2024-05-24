@@ -17,7 +17,7 @@ class I18NConfiguration {
         this.projectID = projectID || getDefaultFromEnv('GT_PROJECT_ID');
         this.page = page || 'default',
         this.defaultLanguage = defaultLanguage || 'en';
-        this.userLanguage = userLanguage || defaultLanguage;
+        this.userLanguage = userLanguage || '';
         this.remoteSource = remoteSource ?? true;
         this.gt = gt || new GT({ projectID: this.projectID, apiKey: this.apiKey, defaultLanguage: this.defaultLanguage });
         this.metadata = { ...metadata }
@@ -40,7 +40,7 @@ class I18NConfiguration {
     }
 
     get translationRequired() {
-        return (this.projectID && this.page && (getLanguageName(this.userLanguage) !== getLanguageName(this.defaultLanguage))) 
+        return (this.projectID && this.page && this.userLanguage && (getLanguageName(this.userLanguage) !== getLanguageName(this.defaultLanguage))) 
         ? true : false;
     } 
 

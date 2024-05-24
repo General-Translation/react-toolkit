@@ -13,6 +13,7 @@ export default async function ServerI18N({
 
     const translationRequired = I18NConfig.translationRequired;
 
+    console.log('translation required:', translationRequired)
     if (!translationRequired) {
         return (
             <React.Fragment {...props}>
@@ -21,6 +22,7 @@ export default async function ServerI18N({
         )
     }
 
+    console.log('fetching I18N data...')
     const I18NData = await I18NConfig.getI18NData();
 
     const htmlString = createChildrenString(children, new ComponentNamer());
