@@ -1,5 +1,7 @@
 // I18NConfig.js
 
+import fs from 'fs';
+import path from 'path';
 import GT, { getLanguageName } from "generaltranslation";
 import I18NManager from "./I18NManager";
 
@@ -17,7 +19,6 @@ class I18NConfiguration {
         this.projectID = projectID || getDefaultFromEnv('GT_PROJECT_ID');
         this.page = page || 'default',
         this.defaultLanguage = defaultLanguage || 'en';
-        this.userLanguage = userLanguage || '';
         this.remoteSource = remoteSource ?? true;
         this.gt = gt || new GT({ projectID: this.projectID, apiKey: this.apiKey, defaultLanguage: this.defaultLanguage });
         this.metadata = { ...metadata }
@@ -27,24 +28,25 @@ class I18NConfiguration {
         this._I18NManager = new I18NManager({ gt: this.gt })
     }
 
-    set(parameters) {
-        Object.assign(this, parameters);
-        if (parameters.apiKey || parameters.projectID || parameters.defaultLanguage) {
-            this.gt = new GT({
-                projectID: this.projectID,
-                apiKey: this.apiKey,
-                defaultLanguage: this.defaultLanguage
-            });
-            this._I18NManager = new I18NManager({ gt: this.gt });
+    static fromFile(filePath = null) {
+        const defaultFilePath = path.resolve(process.cwd(), 'gt_config.json');
+        const configPath = filePath || getDefaultFromEnv('GT_CONFIG_PATH') || defaultFilePath;
+        let configData = {};
+        try {
+            const configContent = fs.readFileSync(configPath, 'utf-8');
+            configData = JSON.parse(configContent);
+        } catch (error) {
+            console.warn('@generaltranslation/react: No I18N config detected. Defaulting to standard settings.')
         }
+        return new I18NConfiguration(configData);
     }
 
-    get translationRequired() {
-        return (this.projectID && this.page && this.userLanguage && (getLanguageName(this.userLanguage) !== getLanguageName(this.defaultLanguage))) 
+    translationRequired(userLanguage) {
+        return (this.projectID && this.page && userLanguage && (getLanguageName(userLanguage) !== getLanguageName(this.defaultLanguage))) 
         ? true : false;
     } 
 
-    async getI18NData() {
+    async getI18NData(userLanguage) {
         if (this._I18NData) {
             return this._I18NData;
         }
@@ -57,14 +59,14 @@ class I18NConfiguration {
             let I18NData = {};
             if (this.remoteSource) {
                 try {
-                    const response = await fetch(`https://json.gtx.dev/${this.projectID}/${this.page}/${this.userLanguage}`);
+                    const response = await fetch(`https://json.gtx.dev/${this.projectID}/${this.page}/${userLanguage}`);
                     I18NData = await response.json();
                 } catch (error) {
                     console.error(error);
                     this._I18NData = {};
                 }
-            } else if (this.userLanguage in this.metadata) {
-                Object.assign(I18NData, this.metadata[this.userLanguage]);
+            } else if (userLanguage in this.metadata) {
+                Object.assign(I18NData, this.metadata[userLanguage]);
             }
             this._I18NData = I18NData;  // Save fetched data
             this._I18NDataPromise = null; // Reset the promise
@@ -74,12 +76,12 @@ class I18NConfiguration {
         return this._I18NDataPromise;
     }
 
-    async translate({ htmlString }) {
-        return await this._I18NManager.translateHTML({ htmlString });
+    async translate({ htmlString, userLanguage, ...metadata }) {
+        return await this._I18NManager.translateHTML({ htmlString, userLanguage, ...metadata });
     }
 
 }
 
-const I18NConfig = new I18NConfiguration();
+const I18NConfig = I18NConfiguration.fromFile();
 
 export default I18NConfig;

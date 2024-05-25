@@ -8,22 +8,21 @@ import renderChildren from "./js/renderChildren";
 import _I18NResolver from "./_I18NResolver";
 
 export default async function ServerI18N({ 
-    children, ...props
+    children, userLanguage, ...metadata
 }) {
 
-    const translationRequired = I18NConfig.translationRequired;
+    const translationRequired = I18NConfig.translationRequired(userLanguage);
 
-    console.log('translation required:', translationRequired)
     if (!translationRequired) {
         return (
-            <React.Fragment {...props}>
+            <>
                 {children}
-            </React.Fragment>
+            </>
         )
     }
-
-    console.log('fetching I18N data...')
-    const I18NData = await I18NConfig.getI18NData();
+    
+    const I18NData = await I18NConfig.getI18NData(userLanguage);
+    console.log(I18NData)
 
     const htmlString = createChildrenString(children, new ComponentNamer());
 
@@ -34,18 +33,18 @@ export default async function ServerI18N({
 
     if (!newTranslationRequired) {
         return (
-            <React.Fragment {...props}>
+            <>
                 {renderChildren(children, I18NData?.[htmlString], new ComponentNamer())}
-            </React.Fragment>
+            </>
         )
     }
 
-    const newTranslations = I18NConfig.translate({ htmlString }); // returns a promise
+    const newTranslations = I18NConfig.translate({ htmlString, userLanguage, ...metadata }); // returns a promise
 
     return (
-        <React.Fragment {...props}>
+        <>
             <_I18NResolver promise={newTranslations} htmlString={htmlString}>{children}</_I18NResolver>
-        </React.Fragment>
+        </>
     )
 
 }

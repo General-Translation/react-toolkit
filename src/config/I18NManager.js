@@ -35,7 +35,7 @@ export default class I18NManager {
             const I18NData = await this.gt.translateHTML({
                 content: htmlStrings,
                 page: I18NConfig.page,
-                userLanguage: I18NConfig.userLanguage,
+                userLanguage: batch[0].params.userLanguage,
                 defaultLanguage: I18NConfig.defaultLanguage,
                 ...I18NConfig.metadata
             })
