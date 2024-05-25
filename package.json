@@ -1,6 +1,6 @@
 {
   "name": "@generaltranslation/react",
-  "version": "1.1.99",
+  "version": "1.1.105",
   "description": "",
   "main": "lib/index.js",
   "peerDependencies": {

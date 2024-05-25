@@ -19,7 +19,7 @@ class I18NConfiguration {
         defaultLanguage, 
         remoteSource, 
         maxConcurrentRequests = 3,
-        batchInterval = 25,
+        batchInterval = 200,
         ...metadata 
     } = {}) {
         // User-settable
@@ -186,6 +186,7 @@ class I18NConfiguration {
                 if (stringBatch.length > 1) {
                     this._sendBatchStringRequest(stringBatch);
                 }
+                this._queue = [];
             }
         }, this.batchInterval);
     }
