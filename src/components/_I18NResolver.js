@@ -7,7 +7,7 @@ import renderChildren from "./js/renderChildren";
 import { ComponentNamer } from "./js/createChildrenString";
 
 export default function _I18NResolver({
-    children, promise, htmlString
+    children, promise, html
 }) {
 
     const [translation, setTranslation] = useState(null);
@@ -15,8 +15,8 @@ export default function _I18NResolver({
     useEffect(() => {
         const resolveI18NPromise = async () => {
             const I18NData = await promise;
-            if (I18NData?.[htmlString]) {
-                setTranslation(renderChildren(children, I18NData?.[htmlString], new ComponentNamer()));
+            if (I18NData?.[html]) {
+                setTranslation(renderChildren(children, I18NData?.[html], new ComponentNamer()));
             }
         }
         resolveI18NPromise();

@@ -22,11 +22,10 @@ export default async function ServerI18N({
     }
     
     const I18NData = await I18NConfig.getI18NData(userLanguage);
-    console.log(I18NData)
 
-    const htmlString = createChildrenString(children, new ComponentNamer());
+    const html = createChildrenString(children, new ComponentNamer());
 
-    const newTranslationRequired = I18NData?.[htmlString] ? false : true;
+    const newTranslationRequired = I18NData?.[html] ? false : true;
 
     // wrap children if necessary so that it is only one child
     children = React.Children.count(children) === 1 ? children : <React.Fragment>{children}</React.Fragment>;
@@ -34,16 +33,16 @@ export default async function ServerI18N({
     if (!newTranslationRequired) {
         return (
             <>
-                {renderChildren(children, I18NData?.[htmlString], new ComponentNamer())}
+                {renderChildren(children, I18NData?.[html], new ComponentNamer())}
             </>
         )
     }
 
-    const newTranslations = I18NConfig.translate({ htmlString, userLanguage, ...metadata }); // returns a promise
+    const newTranslations = I18NConfig.translateHTML({ html, userLanguage, ...metadata }); // returns a promise
 
     return (
         <>
-            <_I18NResolver promise={newTranslations} htmlString={htmlString}>{children}</_I18NResolver>
+            <_I18NResolver promise={newTranslations} html={html}>{children}</_I18NResolver>
         </>
     )
 
