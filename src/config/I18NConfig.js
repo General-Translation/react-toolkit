@@ -43,15 +43,16 @@ class I18NConfiguration {
         
     }
 
-    static fromFile(filePath = null) {
-        const defaultFilePath = path.resolve(process.cwd(), 'gt_config.json');
-        const configPath = filePath || getDefaultFromEnv('GT_CONFIG_PATH') || defaultFilePath;
+    static fromFile() {
         let configData = {};
-        try {
-            const configContent = fs.readFileSync(configPath, 'utf-8');
-            configData = JSON.parse(configContent);
-        } catch (error) {
-            console.warn('@generaltranslation/react: No I18N config detected. Defaulting to standard settings.')
+        const configPath = getDefaultFromEnv('GT_CONFIG_PATH') || defaultFilePath;
+        if (configPath) {
+            try {
+                const configContent = fs.readFileSync(configPath, 'utf-8');
+                configData = JSON.parse(configContent);
+            } catch (error) {
+                console.warn('@generaltranslation/react: No I18N config detected. Defaulting to standard settings.')
+            }
         }
         return new I18NConfiguration(configData);
     }
