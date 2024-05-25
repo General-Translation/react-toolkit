@@ -43,9 +43,9 @@ class I18NConfiguration {
         
     }
 
-    static fromFile() {
+    static fromFile(filepath = null) {
         let configData = {};
-        const configPath = getDefaultFromEnv('GT_CONFIG_PATH') || defaultFilePath;
+        const configPath = filepath || getDefaultFromEnv('GT_CONFIG_PATH');
         if (configPath) {
             try {
                 const configContent = fs.readFileSync(configPath, 'utf-8');
