@@ -19,7 +19,7 @@ class I18NConfiguration {
         defaultLanguage, 
         remoteSource, 
         maxConcurrentRequests = 3,
-        batchInterval = 200,
+        batchInterval = 25,
         ...metadata 
     } = {}) {
         // User-settable
