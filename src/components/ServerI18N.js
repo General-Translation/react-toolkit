@@ -3,9 +3,39 @@
 import * as React from 'react'
 
 import I18NConfig from "../config/I18NConfig";
-import { ComponentNamer, createChildrenString } from './js/createChildrenString';
 import renderChildren from "./js/renderChildren";
 import _I18NResolver from "./_I18NResolver";
+import generateHash from './js/generateHash';
+import { markedForExclude } from './js/checkPrimitives';
+
+const addGeneralTranslationIdentifierRecursively = (child, indexObj) => {
+    if (React.isValidElement(child)) {
+        const currentID = indexObj.index;
+        indexObj.index = indexObj.index + 1;
+        const { props } = child;
+        return React.cloneElement(child, {
+            ...props,
+            generaltranslation: currentID,
+            children: React.Children.map(props.children, (nestedChild) =>
+                addGeneralTranslationIdentifierRecursively(nestedChild, indexObj)
+            )
+        });
+    }
+    return child;
+};
+
+const sanitizeChildren = (children) => {
+    return React.Children.map(children, child => {
+        if (markedForExclude(child)) {
+            return React.createElement('span', {
+                generaltranslation: child.props.generaltranslation,
+                excludeI18N: true
+            })
+        } else {
+            return child;
+        }
+    })
+};
 
 export default async function ServerI18N({ 
     children, userLanguage, ...metadata
@@ -13,36 +43,39 @@ export default async function ServerI18N({
 
     const translationRequired = I18NConfig.translationRequired(userLanguage);
 
-    if (!translationRequired) {
+    if (!translationRequired || !children) {
         return (
             <>
                 {children}
             </>
         )
     }
-    
-    const I18NData = await I18NConfig.getI18NData(userLanguage);
 
-    const html = createChildrenString(children, new ComponentNamer());
+    let indexObj = { index: 0 };
+    children = React.Children.map(children, child => {
+        return addGeneralTranslationIdentifierRecursively(child, indexObj)
+    });
 
-    const newTranslationRequired = I18NData?.[html] ? false : true;
+    const I18NData = null // await I18NConfig.getI18NData(userLanguage);
 
-    // wrap children if necessary so that it is only one child
-    children = React.Children.count(children) === 1 ? children : <React.Fragment>{children}</React.Fragment>;
+    const hash = await generateHash(children);
+
+    const newTranslationRequired = I18NData?.[hash] ? false : true;
 
     if (!newTranslationRequired) {
         return (
             <>
-                {renderChildren(children, I18NData?.[html], new ComponentNamer())}
+                {renderChildren(children, I18NData?.[hash])}
             </>
         )
     }
 
-    const newTranslations = I18NConfig.translateHTML({ html, userLanguage, ...metadata }); // returns a promise
+    const sanitizedChildren = sanitizeChildren(children);
+    const I18NChildrenPromise = I18NConfig.translateReact({ content: sanitizedChildren, hash, userLanguage, ...metadata });
 
     return (
         <>
-            <_I18NResolver promise={newTranslations} html={html}>{children}</_I18NResolver>
+            <_I18NResolver promise={I18NChildrenPromise}>{children}</_I18NResolver>
         </>
     )
 

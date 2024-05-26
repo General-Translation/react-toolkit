@@ -109,6 +109,42 @@ class I18NConfiguration {
 
     // ----- HTML TRANSLATION ----- //
 
+    
+
+    async translateReact(params) {
+        return new Promise((resolve, reject) => {
+            this._queue.push({ params, resolve, reject });
+        });
+    }
+
+    async _sendBatchReactRequest(batch) {
+        this._activeRequests++;
+        try {
+            // Combine batch into a request array to be sent to the endpoint
+            // batch looks like: [{ content, hash, userLanguage, ...metadata }]
+            let I18NData = {};
+            try {
+                const response = await fetch('http://localhost:10000', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(batch.map(item => item.params))
+                });
+                I18NData = await response.json();
+            } catch (error) {
+                //
+            }
+            batch.forEach((item, index) => {
+                item.resolve(I18NData[item?.params?.hash]);
+            });
+        } catch (error) {
+            batch.forEach(item => item.reject(error));
+        } finally {
+            this._activeRequests--;
+        }
+    }
+
     async translateHTML(params) {
         return new Promise((resolve, reject) => {
             this._queue.push({ params, resolve, reject });
@@ -171,15 +207,22 @@ class I18NConfiguration {
     _startBatching() {
         setInterval(() => {
             if (this._queue.length > 0 && this._activeRequests < this.maxConcurrentRequests) {
+                const reactBatch = [];
                 const htmlBatch = [];
                 const stringBatch = [];
                 for (const item of this._queue) {
-                    if (item?.params?.html) {
+                    if (item?.params?.content) {
+                        reactBatch.push(item);
+                    }
+                    else if (item?.params?.html) {
                         htmlBatch.push(item);
                     }
                     else if (item?.params?.string) {
                         stringBatch.push(item);
                     }
+                }
+                if (reactBatch.length > 1) {
+                    this._sendBatchReactRequest(reactBatch);
                 }
                 if (htmlBatch.length > 1) {
                     this._sendBatchHTMLRequest(htmlBatch);
