@@ -126,7 +126,8 @@ class I18NConfiguration {
                 const response = await fetch(this.baseURL, {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json'
+                        'Content-Type': 'application/json',
+                        'gtx-api-key': this.apiKey,
                     },
                     body: JSON.stringify(batch.map(item => item.params))
                 });
