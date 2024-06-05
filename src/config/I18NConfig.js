@@ -19,7 +19,7 @@ class I18NConfiguration {
         defaultLanguage, 
         remoteSource, 
         maxConcurrentRequests = 3,
-        batchInterval = 25,
+        batchInterval = 50,
         ...metadata 
     } = {}) {
         // User-settable
@@ -109,8 +109,6 @@ class I18NConfiguration {
 
     // ----- HTML TRANSLATION ----- //
 
-    
-
     async translateReact(params) {
         return new Promise((resolve, reject) => {
             this._queue.push({ params, resolve, reject });
@@ -133,40 +131,10 @@ class I18NConfiguration {
                 });
                 I18NData = await response.json();
             } catch (error) {
-                //
+                console.error(error)
             }
             batch.forEach((item, index) => {
                 item.resolve(I18NData[item?.params?.hash]);
-            });
-        } catch (error) {
-            batch.forEach(item => item.reject(error));
-        } finally {
-            this._activeRequests--;
-        }
-    }
-
-    async translateHTML(params) {
-        return new Promise((resolve, reject) => {
-            this._queue.push({ params, resolve, reject });
-        });
-    }
-
-    async _sendBatchHTMLRequest(batch) {
-        this._activeRequests++;
-        try {
-            // Combine batch into a request array to be sent to the endpoint
-            // array of HTML strings and language, like:
-            // [{ html: '', userLanguage: ''}]
-            const htmlStrings = batch.map(item => item.params.html);
-            const I18NData = await this.gt.translateHTML({
-                content: htmlStrings,
-                page: I18NConfig.page,
-                userLanguage: batch[0].params.userLanguage,
-                defaultLanguage: I18NConfig.defaultLanguage,
-                ...I18NConfig.metadata
-            })
-            batch.forEach((item, index) => {
-                item.resolve(I18NData);
             });
         } catch (error) {
             batch.forEach(item => item.reject(error));
@@ -208,26 +176,19 @@ class I18NConfiguration {
         setInterval(() => {
             if (this._queue.length > 0 && this._activeRequests < this.maxConcurrentRequests) {
                 const reactBatch = [];
-                const htmlBatch = [];
                 const stringBatch = [];
                 for (const item of this._queue) {
                     if (item?.params?.content) {
                         reactBatch.push(item);
                     }
-                    else if (item?.params?.html) {
-                        htmlBatch.push(item);
-                    }
                     else if (item?.params?.string) {
                         stringBatch.push(item);
                     }
                 }
-                if (reactBatch.length > 1) {
+                if (reactBatch.length > 0) {
                     this._sendBatchReactRequest(reactBatch);
                 }
-                if (htmlBatch.length > 1) {
-                    this._sendBatchHTMLRequest(htmlBatch);
-                }
-                if (stringBatch.length > 1) {
+                if (stringBatch.length > 0) {
                     this._sendBatchStringRequest(stringBatch);
                 }
                 this._queue = [];

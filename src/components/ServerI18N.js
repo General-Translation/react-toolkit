@@ -13,13 +13,20 @@ const addGeneralTranslationIdentifierRecursively = (child, indexObj) => {
         const currentID = indexObj.index;
         indexObj.index = indexObj.index + 1;
         const { props } = child;
-        return React.cloneElement(child, {
-            ...props,
-            generaltranslation: currentID,
-            children: React.Children.map(props.children, (nestedChild) =>
-                addGeneralTranslationIdentifierRecursively(nestedChild, indexObj)
-            )
-        });
+        if (props?.children) {
+            return React.cloneElement(child, {
+                ...props,
+                generaltranslation: currentID,
+                children: React.Children.map(props.children, (nestedChild) =>
+                    addGeneralTranslationIdentifierRecursively(nestedChild, indexObj)
+                )
+            });
+        } else {
+            return React.cloneElement(child, {
+                ...props,
+                generaltranslation: currentID
+            });
+        }
     }
     return child;
 };
@@ -58,9 +65,10 @@ export default async function ServerI18N({
 
     const I18NData = null // await I18NConfig.getI18NData(userLanguage);
 
-    const hash = await generateHash(children);
+    const sanitizedChildren = sanitizeChildren(children);
+    const hash = await generateHash(sanitizedChildren);
 
-    const newTranslationRequired = I18NData?.[hash] ? false : true;
+    const newTranslationRequired = I18NData ? I18NData[hash] ? false : true : true;
 
     if (!newTranslationRequired) {
         return (
@@ -70,7 +78,6 @@ export default async function ServerI18N({
         )
     }
 
-    const sanitizedChildren = sanitizeChildren(children);
     const I18NChildrenPromise = I18NConfig.translateReact({ content: sanitizedChildren, hash, userLanguage, ...metadata });
 
     return (
