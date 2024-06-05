@@ -19,6 +19,7 @@ class I18NConfiguration {
         remoteSource, 
         maxConcurrentRequests = 3,
         batchInterval = 50,
+        baseURL = "https://react.gtx.dev",
         ...metadata 
     } = {}) {
         // User-settable
@@ -28,6 +29,7 @@ class I18NConfiguration {
         this.defaultLanguage = defaultLanguage || 'en';
         this.remoteSource = remoteSource ?? true;
         this.gt = new GT({ projectID: this.projectID, apiKey: this.apiKey, defaultLanguage: this.defaultLanguage });
+        this.baseURL = baseURL;
         this.metadata = { ...metadata }
         // Batching
         this.maxConcurrentRequests = maxConcurrentRequests,
@@ -121,7 +123,7 @@ class I18NConfiguration {
             // batch looks like: [{ content, hash, userLanguage, ...metadata }]
             let I18NData = {};
             try {
-                const response = await fetch('http://localhost:10000', {
+                const response = await fetch(this.baseURL, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
