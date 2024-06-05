@@ -1,12 +1,9 @@
-'use server'
-
 import * as React from 'react'
 
 import I18NConfig from "../config/I18NConfig";
-import renderChildren from "./js/renderChildren";
-import _I18NResolver from "./_I18NResolver";
-import generateHash from './js/generateHash';
-import { markedForExclude } from './js/checkPrimitives';
+import renderChildren from "../components/js/renderChildren";
+import _I18NResolver from "../components/_I18NResolver";
+import generateHash from '../components/js/generateHash';
 
 const addGeneralTranslationIdentifierRecursively = (child, indexObj) => {
     if (React.isValidElement(child)) {
@@ -31,19 +28,6 @@ const addGeneralTranslationIdentifierRecursively = (child, indexObj) => {
     return child;
 };
 
-const sanitizeChildren = (children) => {
-    return React.Children.map(children, child => {
-        if (markedForExclude(child)) {
-            return React.createElement('span', {
-                generaltranslation: child.props.generaltranslation,
-                excludeI18N: true
-            })
-        } else {
-            return child;
-        }
-    })
-};
-
 export default async function ServerI18N({ 
     children, userLanguage, ...metadata
 }) {
@@ -58,15 +42,14 @@ export default async function ServerI18N({
         )
     }
 
-    let indexObj = { index: 0 };
+    let indexObj = { index: 1 };
     children = React.Children.map(children, child => {
         return addGeneralTranslationIdentifierRecursively(child, indexObj)
     });
 
     const I18NData = null // await I18NConfig.getI18NData(userLanguage);
 
-    const sanitizedChildren = sanitizeChildren(children);
-    const hash = await generateHash(sanitizedChildren);
+    const hash = await generateHash(children);
 
     const newTranslationRequired = I18NData ? I18NData[hash] ? false : true : true;
 
@@ -78,7 +61,7 @@ export default async function ServerI18N({
         )
     }
 
-    const I18NChildrenPromise = I18NConfig.translateReact({ content: sanitizedChildren, hash, userLanguage, ...metadata });
+    const I18NChildrenPromise = I18NConfig.translateReact({ content: children, hash, userLanguage, ...metadata });
 
     return (
         <>

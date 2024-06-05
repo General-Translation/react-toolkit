@@ -1,12 +1,6 @@
-import NextI18N from "./next/NextI18N";
-import ServerI18N from "./components/ServerI18N";
-import intl from "./functions/intl/intl";
-import { getUserLanguageNext, getDomainNext } from "./next/headerFunctions";
-
+import ServerI18N from "./server/ServerI18N";
+import { Paragraph } from "./server/Wrappers";
 export {
-    ServerI18N,
-    NextI18N,
-    intl,
-    getUserLanguageNext,
-    getDomainNext
-}
+    ServerI18N as I18N,
+    Paragraph
+};

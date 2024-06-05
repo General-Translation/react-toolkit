@@ -1,7 +1,6 @@
 // I18NConfig.js
 
 import fs from 'fs';
-import path from 'path';
 import GT, { getLanguageName } from "generaltranslation";
 
 function getDefaultFromEnv(VARIABLE) {
@@ -143,54 +142,12 @@ class I18NConfiguration {
         }
     }
 
-    // ----- STRING TRANSLATION ----- //
-
-    async translateString(params) {
-        return new Promise((resolve, reject) => {
-            this._queue.push({ params, resolve, reject });
-        });
-    }
-
-    async _sendBatchStringRequest(batch) {
-        this._activeRequests++;
-        try {
-            // Batch looks like:
-            // [{ string: '', userLanguage: '' }]
-            // Combine strings into a request array to be sent to the endpoint
-            const contentArray = batch.map(item => item.params.string);
-            const translationArray = await this.gt.translateMany(contentArray, batch[0].params.userLanguage)
-            batch.forEach((item, index) => {
-                item.resolve(translationArray[index]);
-            });
-        } catch (error) {
-            batch.forEach(item => item.reject(error));
-        } finally {
-            this._activeRequests--;
-        }
-    }
-
-
     // ----- SORTING AND BATCHING ----- //
 
     _startBatching() {
         setInterval(() => {
             if (this._queue.length > 0 && this._activeRequests < this.maxConcurrentRequests) {
-                const reactBatch = [];
-                const stringBatch = [];
-                for (const item of this._queue) {
-                    if (item?.params?.content) {
-                        reactBatch.push(item);
-                    }
-                    else if (item?.params?.string) {
-                        stringBatch.push(item);
-                    }
-                }
-                if (reactBatch.length > 0) {
-                    this._sendBatchReactRequest(reactBatch);
-                }
-                if (stringBatch.length > 0) {
-                    this._sendBatchStringRequest(stringBatch);
-                }
+                this._sendBatchReactRequest(this._queue);
                 this._queue = [];
             }
         }, this.batchInterval);

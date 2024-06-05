@@ -1,6 +1,6 @@
 {
   "name": "@generaltranslation/react",
-  "version": "1.1.116",
+  "version": "1.1.117",
   "description": "",
   "main": "lib/index.js",
   "peerDependencies": {
@@ -31,5 +31,9 @@
     "@babel/plugin-syntax-jsx": "^7.24.1",
     "@babel/preset-env": "^7.24.5",
     "@babel/preset-react": "^7.24.1"
+  },
+  "exports": {
+    ".": "./lib/index.js",
+    "./next": "./lib/next.js"
   }
 }

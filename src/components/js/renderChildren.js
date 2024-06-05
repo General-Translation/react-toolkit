@@ -10,16 +10,7 @@ export default function renderChildren(source, target) {
             return <React.Fragment key={index}>{targetChild}</React.Fragment>;
         }
         else {
-            let matchingSource = source.find(component => (typeof component?.props?.generaltranslation === 'number') && (component?.props?.generaltranslation === targetChild?.props?.generaltranslation));
-            if (!matchingSource) {
-                const matchIndex = source.findIndex(component => 
-                    typeof component === 'object' && typeof component?.props?.generaltranslation !== 'number'
-                );
-                if (matchIndex !== -1) {
-                    matchingSource = source[matchIndex];
-                    source.splice(matchIndex, 1);
-                }
-            }
+            const matchingSource = source.find(component => (typeof component?.props?.generaltranslation === 'number') && (component?.props?.generaltranslation === targetChild?.props?.generaltranslation));
             if (React.isValidElement(matchingSource)) {
                 if (matchingSource.props.children && targetChild.props.children) {
                     return React.cloneElement(matchingSource, {
