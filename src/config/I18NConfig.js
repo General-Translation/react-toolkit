@@ -13,24 +13,22 @@ function getDefaultFromEnv(VARIABLE) {
 class I18NConfiguration {
     constructor({ 
         apiKey, 
-        projectID, 
-        page, 
+        projectID,
         defaultLanguage, 
         remoteSource, 
         maxConcurrentRequests = 3,
         batchInterval = 50,
-        baseURL = "https://react.gtx.dev",
+        baseURL = "https://prod.gtx.dev",
         ...metadata 
     } = {}) {
         // User-settable
         this.apiKey = apiKey || getDefaultFromEnv('GT_API_KEY');
         this.projectID = projectID || getDefaultFromEnv('GT_PROJECT_ID');
-        this.page = page || 'default',
         this.defaultLanguage = defaultLanguage || 'en';
         this.remoteSource = remoteSource ?? true;
         this.gt = new GT({ projectID: this.projectID, apiKey: this.apiKey, defaultLanguage: this.defaultLanguage });
         this.baseURL = baseURL;
-        this.metadata = { ...metadata }
+        this.metadata = { projectID: this.projectID, ...metadata }
         // Batching
         this.maxConcurrentRequests = maxConcurrentRequests,
         this.batchInterval = batchInterval,
@@ -61,7 +59,7 @@ class I18NConfiguration {
     // ----- TRANSLATION REQUIRED ----- //
 
     translationRequired(userLanguage) {
-        return (this.projectID && this.page && userLanguage && (getLanguageName(userLanguage) !== getLanguageName(this.defaultLanguage))) 
+        return (this.projectID && userLanguage && (getLanguageName(userLanguage) !== getLanguageName(this.defaultLanguage))) 
         ? true : false;
     } 
 
@@ -91,7 +89,7 @@ class I18NConfiguration {
             let I18NData = {};
             if (this.remoteSource) {
                 try {
-                    const response = await fetch(`https://json.gtx.dev/${this.projectID}/${this.page}/${userLanguage}`);
+                    const response = await fetch(`https://json.gtx.dev/${this.projectID}/${userLanguage}`);
                     I18NData = await response.json();
                 } catch (error) {
                     console.error(error);
@@ -110,9 +108,10 @@ class I18NConfiguration {
 
     // ----- HTML TRANSLATION ----- //
 
-    async translateReact(params) {
+    async translateReact(request) {
         return new Promise((resolve, reject) => {
-            this._queue.push({ params, resolve, reject });
+            const params = { ...this.metadata, ...request }
+            this._queue.push({params, resolve, reject });
         });
     }
 
@@ -123,7 +122,7 @@ class I18NConfiguration {
             // batch looks like: [{ content, hash, userLanguage, ...metadata }]
             let I18NData = {};
             try {
-                const response = await fetch(this.baseURL, {
+                const response = await fetch(`${this.baseURL}`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -158,6 +157,6 @@ class I18NConfiguration {
 
 }
 
-const I18NConfig = I18NConfiguration.fromFile();
+const I18NConfig = I18NConfiguration.fromFile('gt_config.json');
 
 export default I18NConfig;

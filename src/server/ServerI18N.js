@@ -22,7 +22,7 @@ const addGeneralTranslationIdentifierRecursively = (child, indexObj) => {
             return React.cloneElement(child, {
                 ...props,
                 generaltranslation: currentID
-            });
+            });       
         }
     }
     return child;

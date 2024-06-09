@@ -1,9 +1,16 @@
 import * as React from 'react'
 
-// source and target are both initially single objects
+// source and target are both arrays of children, even single children
 export default function renderChildren(source, target) {
 
     if (!target) return source;
+
+    // catch complex components which lose their added props
+    const complex = source.filter(child => {
+        if (child && typeof child !== 'string' && child?.props && !child?.props?.generaltranslation) {
+            return child;
+        }
+    })
 
     return target.map((targetChild, index) => {
         if (typeof targetChild === 'string') {
@@ -19,6 +26,8 @@ export default function renderChildren(source, target) {
                     });
                 }
                 return matchingSource;
+            } else if (complex.length > 0) {
+                return complex.shift()
             }
         }
     })
