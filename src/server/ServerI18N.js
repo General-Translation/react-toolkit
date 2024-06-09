@@ -47,7 +47,7 @@ export default async function ServerI18N({
         return addGeneralTranslationIdentifierRecursively(child, indexObj)
     });
 
-    const I18NData = null // await I18NConfig.getI18NData(userLanguage);
+    const I18NData = await I18NConfig.getI18NData(userLanguage);
 
     const hash = await generateHash(children);
 
