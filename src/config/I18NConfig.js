@@ -25,7 +25,7 @@ class I18NConfiguration {
         this.apiKey = apiKey || getDefaultFromEnv('GT_API_KEY');
         this.projectID = projectID || getDefaultFromEnv('GT_PROJECT_ID');
         this.defaultLanguage = defaultLanguage || 'en';
-        this.remoteSource = remoteSource ?? true;
+        this.remoteSource = typeof remoteSource === 'boolean' ? remoteSource : true;
         this.gt = new GT({ projectID: this.projectID, apiKey: this.apiKey, defaultLanguage: this.defaultLanguage });
         this.baseURL = baseURL;
         this.metadata = { projectID: this.projectID, ...metadata }

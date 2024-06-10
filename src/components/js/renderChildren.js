@@ -4,7 +4,7 @@ import * as React from 'react'
 export default function renderChildren(source, target) {
 
     if (!target) return source;
-
+    
     // catch complex components which lose their added props
     const complex = source.filter(child => {
         if (child && typeof child !== 'string' && child?.props && !child?.props?.generaltranslation) {
