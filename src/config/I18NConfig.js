@@ -103,7 +103,7 @@ class I18NConfiguration {
             return I18NData;
         })();
 
-        return this._I18NDataPromise;
+        return await this._I18NDataPromise;
     }
 
     // ----- REACT TRANSLATION ----- //
