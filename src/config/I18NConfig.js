@@ -99,7 +99,6 @@ class I18NConfiguration {
                 Object.assign(I18NData, this.metadata[userLanguage]);
             }
             this._I18NData = I18NData;  // Save fetched data
-            this._I18NDataPromise = null; // Reset the promise
             return I18NData;
         })();
 
