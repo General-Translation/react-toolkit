@@ -51,7 +51,7 @@ export default async function ServerI18N({
 
     const hash = await generateHash(children);
 
-    const newTranslationRequired = I18NData ? I18NData[hash] ? false : true : true;
+    const newTranslationRequired = I18NData?.[hash] ? false : true;
 
     if (!newTranslationRequired) {
         return (

@@ -82,7 +82,7 @@ class I18NConfiguration {
         }
 
         if (this._I18NDataPromise) {
-            return this._I18NDataPromise;
+            return await this._I18NDataPromise;
         }
 
         this._I18NDataPromise = (async () => {
@@ -106,7 +106,7 @@ class I18NConfiguration {
         return this._I18NDataPromise;
     }
 
-    // ----- HTML TRANSLATION ----- //
+    // ----- REACT TRANSLATION ----- //
 
     async translateReact(request) {
         return new Promise((resolve, reject) => {
