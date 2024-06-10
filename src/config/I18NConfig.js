@@ -89,7 +89,7 @@ class I18NConfiguration {
             let I18NData = {};
             if (this.remoteSource) {
                 try {
-                    const response = await fetch(`https://json.gtx.dev/${this.projectID}/${userLanguage}`);
+                    const response = await fetch(`https://json.gtx.dev/${this.projectID}/${userLanguage}`, { cache: 'no-store' });
                     I18NData = await response.json();
                 } catch (error) {
                     console.error(error);
