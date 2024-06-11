@@ -65,15 +65,11 @@ class I18NConfiguration {
 
     // ----- I18N JSON CACHING ----- //
 
-    clearLanguageCache() {
-        this._I18NData = null;
-        this._I18NDataPromise = null;
-    }
-
     async getI18NData(userLanguage) {
 
         if (userLanguage !== this._currentLanguage) {
-            this.clearLanguageCache();
+            this._I18NData = null;
+            this._I18NDataPromise = null;
             this._currentLanguage = userLanguage;
         }
 
@@ -82,7 +78,13 @@ class I18NConfiguration {
         }
 
         if (this._I18NDataPromise) {
-            return await this._I18NDataPromise;
+            const result = await this._I18NDataPromise;
+            if (result) {
+                return result;
+            } else {
+                this._I18NData = null;
+                this._I18NDataPromise = null;
+            }
         }
 
         this._I18NDataPromise = (async () => {
@@ -91,15 +93,15 @@ class I18NConfiguration {
                 try {
                     const response = await fetch(`https://json.gtx.dev/${this.projectID}/${userLanguage}`, { cache: 'no-store' });
                     I18NData = await response.json();
+                    if (Object.keys(I18NData).length > 0) {
+                        this._I18NData = I18NData;
+                        return I18NData;
+                    }
                 } catch (error) {
                     console.error(error);
-                    this._I18NData = {};
                 }
-            } else if (userLanguage in this.metadata) {
-                Object.assign(I18NData, this.metadata[userLanguage]);
             }
-            this._I18NData = I18NData;  // Save fetched data
-            return I18NData;
+            return null;
         })();
 
         return await this._I18NDataPromise;
