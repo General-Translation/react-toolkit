@@ -1,7 +1,7 @@
 // I18NConfig.js
 
 import fs from 'fs';
-import GT, { getLanguageName } from "generaltranslation";
+import GT, { isSameLanguage } from "generaltranslation";
 
 function getDefaultFromEnv(VARIABLE) {
     if (typeof process !== 'undefined' && process?.env?.[VARIABLE]) {
@@ -14,27 +14,29 @@ class I18NConfiguration {
     constructor({ 
         apiKey, 
         projectID,
-        defaultLanguage, 
-        remoteSource, 
+        defaultLanguage = 'en', 
+        remoteSource = true, 
         maxConcurrentRequests = 3,
         batchInterval = 50,
         baseURL = "https://prod.gtx.dev",
+        cacheURL = "https://json.gtx.dev",
         ...metadata 
     } = {}) {
         // User-settable
         this.apiKey = apiKey || getDefaultFromEnv('GT_API_KEY');
         this.projectID = projectID || getDefaultFromEnv('GT_PROJECT_ID');
-        this.defaultLanguage = defaultLanguage || 'en';
-        this.remoteSource = typeof remoteSource === 'boolean' ? remoteSource : true;
-        this.gt = new GT({ projectID: this.projectID, apiKey: this.apiKey, defaultLanguage: this.defaultLanguage });
+        this.defaultLanguage = defaultLanguage;
+        this.remoteSource = remoteSource;
+        this.cacheURL = cacheURL;
         this.baseURL = baseURL;
+        this.gt = new GT({ projectID: this.projectID, apiKey: this.apiKey, defaultLanguage: this.defaultLanguage, baseURL: this.baseURL });
         this.metadata = { projectID: this.projectID, ...metadata }
         // Batching
         this.maxConcurrentRequests = maxConcurrentRequests,
         this.batchInterval = batchInterval,
         this._queue = [];
         this._activeRequests = 0;
-        this._startBatching()
+        this._startBatching();
         // Internal
         this._I18NData = null;
         this._I18NDataPromise = null;
@@ -59,7 +61,7 @@ class I18NConfiguration {
     // ----- TRANSLATION REQUIRED ----- //
 
     translationRequired(userLanguage) {
-        return (this.projectID && userLanguage && (getLanguageName(userLanguage) !== getLanguageName(this.defaultLanguage))) 
+        return (this.projectID && userLanguage && !isSameLanguage(this.defaultLanguage, userLanguage)) 
         ? true : false;
     } 
 
@@ -91,7 +93,7 @@ class I18NConfiguration {
             let I18NData = {};
             if (this.remoteSource) {
                 try {
-                    const response = await fetch(`https://json.gtx.dev/${this.projectID}/${userLanguage}`, { cache: 'no-store' });
+                    const response = await fetch(`${this.cacheURL}/${this.projectID}/${userLanguage}`, { cache: 'no-store' });
                     I18NData = await response.json();
                     if (Object.keys(I18NData).length > 0) {
                         this._I18NData = I18NData;
@@ -109,9 +111,8 @@ class I18NConfiguration {
 
     // ----- REACT TRANSLATION ----- //
 
-    async translateReact(request) {
+    async translateChildren(params) {
         return new Promise((resolve, reject) => {
-            const params = { ...this.metadata, ...request }
             this._queue.push({params, resolve, reject });
         });
     }
@@ -120,23 +121,16 @@ class I18NConfiguration {
         this._activeRequests++;
         try {
             // Combine batch into a request array to be sent to the endpoint
-            // batch looks like: [{ content, hash, userLanguage, ...metadata }]
-            let I18NData = {};
-            try {
-                const response = await fetch(`${this.baseURL}`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'gtx-api-key': this.apiKey,
-                    },
-                    body: JSON.stringify(batch.map(item => item.params))
-                });
-                I18NData = await response.json();
-            } catch (error) {
-                console.error(error)
-            }
+            // batch looks like: [{ content, hash, targetLanguage, ...props }]
+            const targetLanguage = batch?.[0]?.params?.targetLanguage || this.defaultLanguage;
+            const content = batch.map(item => item.params.content)
+            const I18NData = (await this.gt.translateReactChildren({
+                content: content,
+                targetLanguage: targetLanguage,
+                ...this.metadata
+            })) || {};
             batch.forEach((item, index) => {
-                item.resolve(I18NData[item?.params?.hash]);
+                item.resolve(I18NData[index]);
             });
         } catch (error) {
             batch.forEach(item => item.reject(error));

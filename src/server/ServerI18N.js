@@ -28,8 +28,32 @@ const addGeneralTranslationIdentifierRecursively = (child, indexObj) => {
     return child;
 };
 
+const sanitizeChild = (child) => {
+    if (React.isValidElement(child)) {
+        const { type, props } = child;
+        if (props) {
+            let finalProps = {};
+            if (props.children) {
+                finalProps.children = React.Children.map(props.children, nestedChild => sanitizeChild(nestedChild))
+            }
+            if (props.generaltranslation) {
+                finalProps.generaltranslation = props.generaltranslation;
+            }
+            return {
+                type: typeof type === 'string' ? type : 'function',
+                props: finalProps
+            }
+        }
+        return {
+            type: type,
+        }
+    }
+    return child;
+}
+
+
 export default async function ServerI18N({ 
-    children, userLanguage, ...metadata
+    children, userLanguage, ...props
 }) {
 
     const translationRequired = I18NConfig.translationRequired(userLanguage);
@@ -43,16 +67,14 @@ export default async function ServerI18N({
     }
 
     let indexObj = { index: 1 };
-    children = React.Children.map(children, child => {
-        return addGeneralTranslationIdentifierRecursively(child, indexObj)
-    });
+    children = React.Children.map(children, child => addGeneralTranslationIdentifierRecursively(child, indexObj));
 
     const I18NData = await I18NConfig.getI18NData(userLanguage);
 
-    const hash = await generateHash(children);
+    const sanitizedChildren = React.Children.map(children, child => sanitizeChild(child))
+    const hash = await generateHash(sanitizedChildren);
 
     const newTranslationRequired = I18NData?.[hash] ? false : true;
-
     if (!newTranslationRequired) {
         return (
             <>
@@ -61,7 +83,7 @@ export default async function ServerI18N({
         )
     }
 
-    const I18NChildrenPromise = I18NConfig.translateReact({ content: children, hash, userLanguage, ...metadata });
+    const I18NChildrenPromise = I18NConfig.translateChildren({ content: sanitizedChildren, targetLanguage: userLanguage, ...props });
 
     return (
         <>
