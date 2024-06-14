@@ -93,7 +93,7 @@ class I18NConfiguration {
             let I18NData = {};
             if (this.remoteSource) {
                 try {
-                    const response = await fetch(`${this.cacheURL}/${this.projectID}/${userLanguage}`, { cache: 'no-store' });
+                    const response = await fetch(`${this.cacheURL}/${this.projectID}/${userLanguage}`);
                     I18NData = await response.json();
                     if (Object.keys(I18NData).length > 0) {
                         this._I18NData = I18NData;
@@ -128,7 +128,7 @@ class I18NConfiguration {
                 content: content,
                 targetLanguage: targetLanguage,
                 ...this.metadata
-            })) || {};
+            }))?.translation || {};
             batch.forEach((item, index) => {
                 item.resolve(I18NData[index]);
             });
