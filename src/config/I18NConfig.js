@@ -93,7 +93,7 @@ class I18NConfiguration {
             let I18NData = {};
             if (this.remoteSource) {
                 try {
-                    const response = await fetch(`${this.cacheURL}/${this.projectID}/${userLanguage}`);
+                    const response = await fetch(`${this.cacheURL}/${this.projectID}/${userLanguage}`, { cache: 'no-store' });
                     I18NData = await response.json();
                     if (Object.keys(I18NData).length > 0) {
                         this._I18NData = I18NData;
