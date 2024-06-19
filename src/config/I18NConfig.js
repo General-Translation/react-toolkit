@@ -133,6 +133,6 @@ function getDefaultFromFile() {
     }
     return 'gt_config.json';
 }
-const I18NConfig = I18NConfiguration.fromFile(getDefaultFromFile());
+const I18NConfig = I18NConfiguration.fromFile('gt_config.json');
 
 export default I18NConfig;
