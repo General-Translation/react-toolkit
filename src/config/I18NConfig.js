@@ -2,6 +2,10 @@
 
 import fs from 'fs';
 import GT, { isSameLanguage } from "generaltranslation";
+import { cache } from 'react';
+import fetchI18NSheet from './fetchI18NSheet';
+
+const getI18NSheetFromCache = cache(fetchI18NSheet);
 
 function getDefaultFromEnv(VARIABLE) {
     if (typeof process !== 'undefined' && process?.env?.[VARIABLE]) {
@@ -20,6 +24,7 @@ class I18NConfiguration {
         batchInterval = 50,
         baseURL = "https://prod.gtx.dev",
         cacheURL = "https://json.gtx.dev",
+        renderMethod = "replace", // "replace", "hang", "subtle"
         ...metadata 
     } = {}) {
         // User-settable
@@ -29,6 +34,7 @@ class I18NConfiguration {
         this.remoteSource = remoteSource;
         this.cacheURL = cacheURL;
         this.baseURL = baseURL;
+        this.renderMethod = renderMethod;
         this.gt = new GT({ projectID: this.projectID, apiKey: this.apiKey, defaultLanguage: this.defaultLanguage, baseURL: this.baseURL });
         this.metadata = { projectID: this.projectID, ...metadata }
         // Batching
@@ -37,11 +43,6 @@ class I18NConfiguration {
         this._queue = [];
         this._activeRequests = 0;
         this._startBatching();
-        // Internal
-        this._I18NData = null;
-        this._I18NDataPromise = null;
-        this._currentLanguage = '';
-        
     }
 
     static fromFile(filepath = null) {
@@ -58,6 +59,12 @@ class I18NConfiguration {
         return new I18NConfiguration(configData);
     }
 
+    // ----- GET RENDER METHOD ----- //
+
+    getRenderMethod() {
+        return this.renderMethod;
+    }
+
     // ----- TRANSLATION REQUIRED ----- //
 
     translationRequired(userLanguage) {
@@ -67,46 +74,14 @@ class I18NConfiguration {
 
     // ----- I18N JSON CACHING ----- //
 
-    async getI18NData(userLanguage) {
-
-        if (userLanguage !== this._currentLanguage) {
-            this._I18NData = null;
-            this._I18NDataPromise = null;
-            this._currentLanguage = userLanguage;
+    async getI18NSheet(userLanguage) {
+        if (this.remoteSource) {
+            const I18NSheet = await getI18NSheetFromCache(this.cacheURL, this.projectID, userLanguage)
+            return I18NSheet;
         }
-
-        if (this._I18NData) {
-            return this._I18NData;
+        if (this.metadata[userLanguage]) {
+            return this.metadata[userLanguage];
         }
-
-        if (this._I18NDataPromise) {
-            const result = await this._I18NDataPromise;
-            if (result) {
-                return result;
-            } else {
-                this._I18NData = null;
-                this._I18NDataPromise = null;
-            }
-        }
-
-        this._I18NDataPromise = (async () => {
-            let I18NData = {};
-            if (this.remoteSource) {
-                try {
-                    const response = await fetch(`${this.cacheURL}/${this.projectID}/${userLanguage}`, { cache: 'no-store' });
-                    I18NData = await response.json();
-                    if (Object.keys(I18NData).length > 0) {
-                        this._I18NData = I18NData;
-                        return I18NData;
-                    }
-                } catch (error) {
-                    console.error(error);
-                }
-            }
-            return null;
-        })();
-
-        return await this._I18NDataPromise;
     }
 
     // ----- REACT TRANSLATION ----- //
@@ -152,6 +127,12 @@ class I18NConfiguration {
 
 }
 
-const I18NConfig = I18NConfiguration.fromFile('gt_config.json');
+function getDefaultFromFile() {
+    if (typeof process !== 'undefined') {
+        return `${process.cwd()}/gt_config.json`
+    }
+    return 'gt_config.json';
+}
+const I18NConfig = I18NConfiguration.fromFile(getDefaultFromFile());
 
 export default I18NConfig;

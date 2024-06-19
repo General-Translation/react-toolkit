@@ -1,0 +1,1 @@
+export default function markedForExclude(type) { return type?.markedForExclude === true };

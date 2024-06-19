@@ -1,4 +1,4 @@
-import * as React from 'react'
+import * as React from 'react';
 
 // source and target are both arrays of children, even single children
 export default function renderChildren(source, target) {
@@ -10,7 +10,7 @@ export default function renderChildren(source, target) {
         if (child && typeof child !== 'string' && child?.props && !child?.props?.generaltranslation) {
             return child;
         }
-    })
+    });
 
     return target.map((targetChild, index) => {
         if (typeof targetChild === 'string') {
@@ -19,10 +19,11 @@ export default function renderChildren(source, target) {
         else {
             const matchingSource = source.find(component => (typeof component?.props?.generaltranslation === 'number') && (component?.props?.generaltranslation === targetChild?.props?.generaltranslation));
             if (React.isValidElement(matchingSource)) {
-                if (matchingSource.props.children && targetChild.props.children) {
+                const { props } = matchingSource;
+                if (props.children && targetChild.props.children) {
                     return React.cloneElement(matchingSource, {
-                        ...matchingSource.props,
-                        children: renderChildren(matchingSource.props.children, targetChild.props.children)
+                        ...props,
+                        children: renderChildren(props.children, targetChild.props.children)
                     });
                 }
                 return matchingSource;

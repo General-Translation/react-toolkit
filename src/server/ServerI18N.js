@@ -1,64 +1,19 @@
 import * as React from 'react'
 
 import I18NConfig from "../config/I18NConfig";
-import renderChildren from "../components/js/renderChildren";
-import _I18NResolver from "../components/_I18NResolver";
-import generateHash from '../components/js/generateHash';
+import renderChildren from "../js/renderChildren";
+import _I18NResolver from "./_I18NResolver.js";
+import generateHash from '../js/generateHash';
+import addGTIdentifier from '../js/addGTIdentifier';
+import writeChildrenAsObjects from '../js/writeChildrenAsObjects';
 
-const addGeneralTranslationIdentifierRecursively = (child, indexObj) => {
-    if (React.isValidElement(child)) {
-        const currentID = indexObj.index;
-        indexObj.index = indexObj.index + 1;
-        const { props } = child;
-        if (props?.children) {
-            return React.cloneElement(child, {
-                ...props,
-                generaltranslation: currentID,
-                children: React.Children.map(props.children, (nestedChild) =>
-                    addGeneralTranslationIdentifierRecursively(nestedChild, indexObj)
-                )
-            });
-        } else {
-            return React.cloneElement(child, {
-                ...props,
-                generaltranslation: currentID
-            });       
-        }
-    }
-    return child;
-};
-
-const sanitizeChild = (child) => {
-    if (React.isValidElement(child)) {
-        const { type, props } = child;
-        if (props) {
-            let finalProps = {};
-            if (props.children) {
-                finalProps.children = React.Children.map(props.children, nestedChild => sanitizeChild(nestedChild))
-            }
-            if (props.generaltranslation) {
-                finalProps.generaltranslation = props.generaltranslation;
-            }
-            return {
-                type: typeof type === 'string' ? type : 'function',
-                props: finalProps
-            }
-        }
-        return {
-            type: type,
-        }
-    }
-    return child;
-}
-
-
-export default async function ServerI18N({ 
+const ServerI18N = async ({ 
     children, userLanguage, ...props
-}) {
+}) => {
 
-    const translationRequired = I18NConfig.translationRequired(userLanguage);
+    const translationRequired = children && I18NConfig.translationRequired(userLanguage);
 
-    if (!translationRequired || !children) {
+    if (!translationRequired) {
         return (
             <>
                 {children}
@@ -66,29 +21,56 @@ export default async function ServerI18N({
         )
     }
 
-    let indexObj = { index: 1 };
-    children = React.Children.map(children, child => addGeneralTranslationIdentifierRecursively(child, indexObj));
+    children = addGTIdentifier(children);
 
-    const I18NData = await I18NConfig.getI18NData(userLanguage);
+    const I18NSheet = await I18NConfig.getI18NSheet(userLanguage);
 
-    const sanitizedChildren = React.Children.map(children, child => sanitizeChild(child))
-    const hash = await generateHash(sanitizedChildren);
+    const childrenAsObjects = writeChildrenAsObjects(children);
 
-    const newTranslationRequired = I18NData?.[hash] ? false : true;
+    const hash = await generateHash(childrenAsObjects);
+
+    const newTranslationRequired = I18NSheet?.[hash] ? false : true;
     if (!newTranslationRequired) {
+        const I18NChildren = renderChildren(children, I18NSheet?.[hash]);
         return (
             <>
-                {renderChildren(children, I18NData?.[hash])}
+                {I18NChildren}
             </>
         )
     }
 
-    const I18NChildrenPromise = I18NConfig.translateChildren({ content: sanitizedChildren, targetLanguage: userLanguage, ...props });
+    const I18NChildrenPromise = I18NConfig.translateChildren({ content: childrenAsObjects, targetLanguage: userLanguage, ...props });
+    
+    const renderMethod = I18NConfig.getRenderMethod();
+    if (renderMethod === "replace") { 
+        // default render method
+        // - returns default language site immediately
+        // - replaces text with translation when it is ready
+        return (
+            <> 
+                <_I18NResolver promise={I18NChildrenPromise}>{children}</_I18NResolver>
+            </>
+        )
+    }
+    if (renderMethod === "hang") {
+        // alternate render method
+        // - renders page only when translation is ready
+        const I18NChildren = renderChildren(children, await I18NChildrenPromise);
+        return (
+            <>
+                {I18NChildren}
+            </>
+        )
+    }
 
     return (
+        // fallback render method
+        // - returns default language site unchanged
         <>
-            <_I18NResolver promise={I18NChildrenPromise}>{children}</_I18NResolver>
+            {children}
         </>
     )
 
 }
+
+export default ServerI18N;

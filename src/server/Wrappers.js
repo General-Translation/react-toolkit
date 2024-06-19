@@ -2,10 +2,10 @@ import React from 'react';
 import ServerI18N from "./ServerI18N";
 
 // <p> tag
-export function Paragraph({ children, userLanguage, ...props }) {
+export function P({ children, userLanguage, ...props }) {
     return (
         <p {...props}>
-            <ServerI18N userLanguage={userLanguage} {...props}>
+            <ServerI18N userLanguage={userLanguage}>
                 {children}
             </ServerI18N>
         </p>
@@ -16,7 +16,7 @@ export function Paragraph({ children, userLanguage, ...props }) {
 export function H1({ children, userLanguage, ...props }) {
     return (
         <h1 {...props}>
-            <ServerI18N userLanguage={userLanguage} {...props}>
+            <ServerI18N userLanguage={userLanguage}>
                 {children}
             </ServerI18N>
         </h1>
@@ -27,7 +27,7 @@ export function H1({ children, userLanguage, ...props }) {
 export function H2({ children, userLanguage, ...props }) {
     return (
         <h2 {...props}>
-            <ServerI18N userLanguage={userLanguage} {...props}>
+            <ServerI18N userLanguage={userLanguage}>
                 {children}
             </ServerI18N>
         </h2>
@@ -38,7 +38,7 @@ export function H2({ children, userLanguage, ...props }) {
 export function H3({ children, userLanguage, ...props }) {
     return (
         <h3 {...props}>
-            <ServerI18N userLanguage={userLanguage} {...props}>
+            <ServerI18N userLanguage={userLanguage}>
                 {children}
             </ServerI18N>
         </h3>
@@ -49,7 +49,7 @@ export function H3({ children, userLanguage, ...props }) {
 export function H4({ children, userLanguage, ...props }) {
     return (
         <h4 {...props}>
-            <ServerI18N userLanguage={userLanguage} {...props}>
+            <ServerI18N userLanguage={userLanguage}>
                 {children}
             </ServerI18N>
         </h4>
@@ -60,7 +60,7 @@ export function H4({ children, userLanguage, ...props }) {
 export function H5({ children, userLanguage, ...props }) {
     return (
         <h5 {...props}>
-            <ServerI18N userLanguage={userLanguage} {...props}>
+            <ServerI18N userLanguage={userLanguage}>
                 {children}
             </ServerI18N>
         </h5>
@@ -71,7 +71,7 @@ export function H5({ children, userLanguage, ...props }) {
 export function H6({ children, userLanguage, ...props }) {
     return (
         <h6 {...props}>
-            <ServerI18N userLanguage={userLanguage} {...props}>
+            <ServerI18N userLanguage={userLanguage}>
                 {children}
             </ServerI18N>
         </h6>
@@ -82,7 +82,7 @@ export function H6({ children, userLanguage, ...props }) {
 export function OL({ children, userLanguage, ...props }) {
     return (
         <ol {...props}>
-            <ServerI18N userLanguage={userLanguage} {...props}>
+            <ServerI18N userLanguage={userLanguage}>
                 {children}
             </ServerI18N>
         </ol>
@@ -93,7 +93,7 @@ export function OL({ children, userLanguage, ...props }) {
 export function UL({ children, userLanguage, ...props }) {
     return (
         <ul {...props}>
-            <ServerI18N userLanguage={userLanguage} {...props}>
+            <ServerI18N userLanguage={userLanguage}>
                 {children}
             </ServerI18N>
         </ul>
