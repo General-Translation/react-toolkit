@@ -115,11 +115,12 @@ class I18NConfiguration {
 }
 
 const configData = (() => {
-    const filepath = path.resolve(process.cwd(), 'gt_config.json');
+    const filename = getDefaultFromEnv("GT_CONFIG_FILEPATH") || 'gt_config.json';
+    const filepath = path.resolve(process.cwd(), filename);
     let data = {};
     try {
-        const configFile = fs.readFileSync(filepath, 'utf-8');
-        data = JSON.parse(configFile);
+        const file = fs.readFileSync(filepath, 'utf-8');
+        data = JSON.parse(file);
     } catch (error) {
         console.warn('@generaltranslation/react: No I18N config readable. Defaulting to standard settings.');
     }
