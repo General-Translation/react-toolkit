@@ -40,7 +40,7 @@ const ServerI18N = async ({
     }
 
     const I18NChildrenPromise = I18NConfig.translateChildren({ content: childrenAsObjects, targetLanguage: userLanguage, ...props });
-    
+
     const renderMethod = I18NConfig.getRenderMethod();
     if (renderMethod === "replace") { 
         // default render method

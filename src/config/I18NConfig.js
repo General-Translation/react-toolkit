@@ -1,6 +1,7 @@
 // I18NConfig.js
 
 import fs from 'fs';
+import path from 'path';
 import GT, { isSameLanguage } from "generaltranslation";
 import { cache } from 'react';
 import fetchI18NSheet from './fetchI18NSheet';
@@ -43,20 +44,6 @@ class I18NConfiguration {
         this._queue = [];
         this._activeRequests = 0;
         this._startBatching();
-    }
-
-    static fromFile(filepath = null) {
-        let configData = {};
-        const configPath = filepath || getDefaultFromEnv('GT_CONFIG_PATH');
-        if (configPath) {
-            try {
-                const configContent = fs.readFileSync(configPath, 'utf-8');
-                configData = JSON.parse(configContent);
-            } catch (error) {
-                console.warn('@generaltranslation/react: No I18N config detected. Defaulting to standard settings.')
-            }
-        }
-        return new I18NConfiguration(configData);
     }
 
     // ----- GET RENDER METHOD ----- //
@@ -127,12 +114,18 @@ class I18NConfiguration {
 
 }
 
-function getDefaultFromFile() {
-    if (typeof process !== 'undefined') {
-        return `${process.cwd()}/gt_config.json`
+const configData = (() => {
+    const filepath = path.resolve(process.cwd(), 'gt_config.json');
+    let data = {};
+    try {
+        const configFile = fs.readFileSync(filepath, 'utf-8');
+        data = JSON.parse(configFile);
+    } catch (error) {
+        console.warn('@generaltranslation/react: No I18N config readable. Defaulting to standard settings.');
     }
-    return 'gt_config.json';
-}
-const I18NConfig = I18NConfiguration.fromFile('gt_config.json');
+    return data;
+})();
+
+const I18NConfig = new I18NConfiguration(configData);
 
 export default I18NConfig;
