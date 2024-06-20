@@ -17,7 +17,7 @@ export default function renderChildren(source, target) {
             return <React.Fragment key={index}>{targetChild}</React.Fragment>;
         }
         else {
-            const matchingSource = source.find(component => (typeof component?.props?.generaltranslation === 'number') && (component?.props?.generaltranslation === targetChild?.props?.generaltranslation));
+            const matchingSource = source.find(component => (typeof component?.props?.generaltranslation?.id === 'number') && (component?.props?.generaltranslation?.id === targetChild?.props?.generaltranslation?.id));
             if (React.isValidElement(matchingSource)) {
                 const { props } = matchingSource;
                 if (props.children && targetChild.props.children) {

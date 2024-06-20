@@ -8,7 +8,7 @@ const getTagName = (child) => {
     if (type?.name) return type?.name;
     if (typeof type === 'string') return type;
     if (props?.href) return 'a';
-    if (props?.generaltranslation) return `C${props?.generaltranslation}`
+    if (props?.generaltranslation?.id) return `C${props.generaltranslation.id}`
     return 'function';
 }
 

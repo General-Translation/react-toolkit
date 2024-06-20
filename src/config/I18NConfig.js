@@ -22,7 +22,7 @@ class I18NConfiguration {
         defaultLanguage = 'en', 
         remoteSource = true, 
         maxConcurrentRequests = 3,
-        batchInterval = 50,
+        batchInterval = 25,
         baseURL = "https://prod.gtx.dev",
         cacheURL = "https://json.gtx.dev",
         renderMethod = "replace", // "replace", "hang", "subtle"
