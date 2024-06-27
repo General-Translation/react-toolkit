@@ -1,6 +1,6 @@
 {
   "name": "@generaltranslation/react",
-  "version": "2.0.2",
+  "version": "2.0.3",
   "description": "",
   "main": "dist/index.js",
   "peerDependencies": {
@@ -14,14 +14,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/general-translation/react-toolkit.git"
+    "url": "git+https://github.com/general-translation/generaltranslation-react.git"
   },
   "author": "General Translation, Inc.",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/general-translation/react-toolkit/issues"
+    "url": "https://github.com/general-translation/generaltranslation-react/issues"
   },
-  "homepage": "https://github.com/general-translation/react-toolkit#readme",
+  "homepage": "https://github.com/general-translation/generaltranslation-react#readme",
   "devDependencies": {
     "@types/node": "^20.14.9",
     "@types/react": "^18.3.3",
