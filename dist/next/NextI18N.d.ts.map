@@ -1,0 +1,1 @@
+{"version":3,"file":"NextI18N.d.ts","sourceRoot":"","sources":["../../src/next/NextI18N.tsx"],"names":[],"mappings":"AAAA,OAAc,EAAE,SAAS,EAAE,MAAM,OAAO,CAAC;AAMzC,UAAU,aAAa;IACnB,QAAQ,EAAE,SAAS,CAAC;IACpB,CAAC,GAAG,EAAE,MAAM,GAAG,GAAG,CAAC;CACtB;AAED,wBAA8B,QAAQ,CAAC,EAAE,QAAQ,EAAE,GAAG,QAAQ,EAAE,EAAE,aAAa,oDAc9E"}

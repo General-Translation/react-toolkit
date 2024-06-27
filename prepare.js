@@ -1,5 +1,6 @@
 const { exec } = require('child_process');
 const fs = require('fs');
+const path = require('path');
 
 // Function to update version number
 function updateVersion(callback) {
@@ -11,6 +12,18 @@ function updateVersion(callback) {
     fs.writeFile('package.json', JSON.stringify(packageJson, null, 2), (err) => {
         if (err) {
             console.error(`Error updating package.json: ${err.message}`);
+            return;
+        }
+        callback();
+    });
+}
+
+// Function to delete dist directory
+function deleteDist(callback) {
+    const distPath = path.join(__dirname, 'dist');
+    fs.rm(distPath, { recursive: true, force: true }, (err) => {
+        if (err) {
+            console.error(`Error deleting dist directory: ${err.message}`);
             return;
         }
         callback();
@@ -35,6 +48,8 @@ function runTranspile(callback) {
 
 // Execute the steps in sequence
 updateVersion(() => {
-    runTranspile(() => {
+    deleteDist(() => {
+        runTranspile(() => {
+        });
     });
 });
